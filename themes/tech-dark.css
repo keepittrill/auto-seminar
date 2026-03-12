@@ -16,7 +16,9 @@
 section {
   background: var(--td-bg);
   color: var(--td-text);
-  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Courier New', monospace;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Courier New',
+               'Noto Sans CJK KR', 'Noto Sans KR', 'Malgun Gothic',
+               'Apple SD Gothic Neo', monospace;
   font-size: 28px;
   padding: 50px 70px;
   width: 1280px;

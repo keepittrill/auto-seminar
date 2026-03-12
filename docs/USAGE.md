@@ -4,6 +4,8 @@
 
 **버전**: 1.1.0 | **최종 수정**: 2026-03-13
 
+> 이 문서는 일반 사용자 가이드(1~10절)와 개발자용 기술 레퍼런스(11절)로 구성됩니다.
+
 ---
 
 ## 목차
@@ -18,6 +20,7 @@
 8. [실전 예시](#8-실전-예시)
 9. [트러블슈팅](#9-트러블슈팅)
 10. [FAQ](#10-faq)
+11. [기술 레퍼런스 (개발자용)](#11-기술-레퍼런스-개발자용)
 
 ---
 
@@ -1207,7 +1210,156 @@ head -1 themes/my-theme.css
 
 `seminar_theme` 값이 CSS 파일의 `/* @theme <name> */`과 **정확히 일치**해야 합니다.
 
-### 9.5 이미지가 표시 안 됨
+### 9.5 PDF/PPTX 한국어 글자 깨짐 (□□□)
+
+#### 원인
+
+PDF와 PNG 내보내기는 Chromium이 슬라이드를 렌더링하여 생성합니다. Chromium이 실행되는 환경에 **한국어 폰트가 설치되어 있지 않으면** 글자 대신 □(두부, tofu) 기호가 출력됩니다.
+
+```
+증상: 로컬에서는 HTML 슬라이드가 정상인데
+      다운로드한 PDF/PNG에서 한글이 □□□로 표시됨
+```
+
+#### 해결 방법 1: GitHub Actions (v1.1 이후 자동 해결)
+
+`deploy.yml`에 한국어 폰트 설치 스텝이 포함되어 있습니다:
+
+```yaml
+- name: Install Korean fonts
+  run: |
+    sudo apt-get update -qq
+    sudo apt-get install -y fonts-noto-cjk
+    fc-cache -f
+```
+
+이 스텝이 없거나 구버전을 사용 중이라면 직접 추가하세요.
+
+#### 해결 방법 2: 로컬 빌드
+
+로컬 Chrome은 OS 시스템 폰트를 사용합니다. OS별 폰트가 설치되어 있으면 대부분 정상 동작합니다:
+
+| OS | 기본 한국어 폰트 | 비고 |
+|----|----------------|------|
+| Windows | 맑은 고딕 (Malgun Gothic) | 기본 내장 |
+| macOS | Apple SD Gothic Neo | 기본 내장 |
+| Ubuntu/Debian | 없음 (별도 설치 필요) | `sudo apt install fonts-noto-cjk` |
+
+```bash
+# Ubuntu/Debian — 한국어 폰트 설치
+sudo apt-get install -y fonts-noto-cjk
+fc-cache -f
+
+# 이후 빌드
+python scripts/build.py
+```
+
+#### PPTX 한국어 깨짐
+
+PPTX는 Chromium 없이 생성(pptxgenjs 사용)되며 텍스트를 Unicode로 저장합니다. PPTX 파일 자체는 한글이 보존되어 있으나, **열람 환경(PC)에 해당 폰트가 없으면** 다른 폰트로 대체 렌더링됩니다.
+
+```
+권장: PPTX를 열 때 PowerPoint가 "폰트 대체" 경고를 표시하면
+     해당 폰트를 설치하거나 "폰트 대체" 후 저장하면 해결됩니다.
+```
+
+한국어 환경에서는 **맑은 고딕** 또는 **나눔고딕**으로 대체 허용하면 가독성 문제가 없습니다.
+
+---
+
+### 9.6 로컬 빌드 vs GitHub Actions 빌드
+
+#### GitHub 없이 로컬에서만 사용할 수 있나요?
+
+**네, 완전히 가능합니다.** GitHub와 GitHub Actions는 선택사항입니다. 로컬 빌드는 GitHub 배포와 **동일한 결과물**을 생성합니다.
+
+```
+로컬 빌드  →  dist/ 폴더 생성 (HTML + PDF + PPTX + PNG)
+GitHub 빌드 →  dist/ 내용을 GitHub Pages에 배포
+```
+
+#### 로컬 빌드 전체 흐름
+
+```bash
+# 1. 의존성 설치 (최초 1회)
+npm install -g @marp-team/marp-cli
+pip install pyyaml
+
+# 2. 슬라이드 파일 추가
+cat > slides/my-talk.md << 'EOF'
+# 발표 제목
+
+> 한줄 요약
+
+## 첫 번째 슬라이드
+
+내용입니다.
+EOF
+
+# 3. 빌드
+python scripts/build.py
+
+# 4. 결과 확인 (브라우저로 열기)
+# macOS
+open dist/index.html
+
+# Windows
+start dist/index.html
+
+# Linux
+xdg-open dist/index.html
+```
+
+#### 로컬 빌드로 생성되는 파일
+
+```
+dist/
+├── index.html              ← 랜딩 페이지 (브라우저로 열면 로컬 포털)
+└── my-talk/
+    ├── index.html          ← HTML 슬라이드 (항상 생성)
+    ├── my-talk.pdf         ← PDF (Chrome 설치 필요)
+    ├── my-talk.pptx        ← PowerPoint (항상 생성)
+    └── png/
+        ├── index.html      ← PNG 갤러리
+        ├── my-talk.001.png
+        └── my-talk.002.png
+```
+
+#### 로컬에서 PDF/PNG 생성이 안 될 때
+
+Chrome 경로를 명시합니다:
+
+```bash
+# Windows (PowerShell)
+$env:CHROME_PATH = "C:\Program Files\Google\Chrome\Application\chrome.exe"
+python scripts/build.py
+
+# Windows (cmd)
+set CHROME_PATH=C:\Program Files\Google\Chrome\Application\chrome.exe
+python scripts/build.py
+
+# macOS
+CHROME_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+  python scripts/build.py
+
+# Linux
+CHROME_PATH=$(which google-chrome || which chromium-browser) \
+  python scripts/build.py
+```
+
+Chrome이 없으면 PDF/PNG는 생성되지 않지만 HTML과 PPTX는 항상 생성됩니다.
+
+#### 로컬 빌드 한국어 폰트 (PDF/PNG 한글 깨짐 방지)
+
+| OS | 해결책 |
+|----|--------|
+| Windows | 맑은 고딕 기본 내장 — 별도 설치 불필요 |
+| macOS | Apple SD Gothic Neo 기본 내장 — 별도 설치 불필요 |
+| Linux | `sudo apt-get install -y fonts-noto-cjk && fc-cache -f` |
+
+---
+
+### 9.8 이미지가 표시 안 됨
 
 ```markdown
 <!-- ❌ 절대 경로 (CI 환경에서 실패) -->
@@ -1304,4 +1456,675 @@ GitHub Actions에서 수동 실행:
 
 ```
 Actions 탭 → Deploy to GitHub Pages → Run workflow 버튼
+```
+
+---
+
+## 11. 기술 레퍼런스 (개발자용)
+
+이 섹션은 **빌드 스크립트 동작 원리, 함수 시그니처, GitHub Actions 파이프라인, 확장 포인트**를 다룹니다.
+기능을 수정하거나 새 기능을 추가하려는 개발자를 대상으로 합니다.
+
+---
+
+### 11.1 전체 빌드 파이프라인
+
+```
+python scripts/build.py
+         │
+         ├─ 1. seminar.config.yml 파싱
+         │
+         ├─ 2. dist/ 완전 삭제 후 재생성
+         │
+         ├─ 3. slides/*.md 알파벳 순 순회 (sorted glob)
+         │       │
+         │       ├─ split_fm()     YAML frontmatter 분리
+         │       ├─ seminar_* 필드 추출 및 Marp 기본값 주입
+         │       ├─ build_fm()     Marp용 frontmatter 재조립
+         │       │
+         │       ├─ 임시 파일 생성 (slides/_build_*.md)
+         │       │
+         │       ├─ _marp(…, --html)          → dist/<stem>/index.html
+         │       ├─ _marp(…, --pdf)           → dist/<stem>/<stem>.pdf
+         │       ├─ _marp(…, --pptx)          → dist/<stem>/<stem>.pptx
+         │       └─ _marp(…, --images png)    → dist/<stem>/png/*.png
+         │                                    → dist/<stem>/png/index.html
+         │
+         └─ 4. generate_landing()  → dist/index.html
+```
+
+각 단계는 독립적으로 실패할 수 있습니다:
+- HTML 빌드 실패 → 해당 슬라이드 전체 스킵 (다음 파일로 진행)
+- PDF/PNG 빌드 실패 → 해당 포맷만 스킵, HTML·PPTX는 유지
+
+---
+
+### 11.2 핵심 함수 레퍼런스 (`scripts/build.py`)
+
+#### `split_fm(text: str) -> tuple[dict, str]`
+
+MD 파일 원문을 YAML frontmatter와 본문으로 분리합니다.
+
+```python
+def split_fm(text: str) -> tuple[dict, str]:
+    if not text.startswith("---"):
+        return {}, text          # frontmatter 없음 → 빈 dict 반환
+    end = text.find("\n---", 3)  # 종료 구분자 탐색 (offset=3으로 시작 --- 건너뜀)
+    if end == -1:
+        return {}, text          # 종료 구분자 없음 → frontmatter 없는 것으로 처리
+    fm = yaml.safe_load(text[3:end]) or {}
+    return fm, text[end + 4:]    # end+4: "\n---\n" 다음 문자부터
+```
+
+**엣지 케이스:**
+- frontmatter가 없는 파일: `{}`, 전체 텍스트 반환
+- `---`로 시작하지만 닫는 `---`가 없는 파일: frontmatter 없는 것으로 처리
+- 빈 frontmatter (`---\n---\n`): `{}` 반환 (yaml.safe_load의 `None` → `or {}`)
+
+---
+
+#### `build_fm(fm: dict, body: str) -> str`
+
+Marp 처리용 frontmatter를 재조립합니다. `seminar_*` 필드가 이미 제거된 `fm` dict를 받습니다.
+
+```python
+def build_fm(fm: dict, body: str) -> str:
+    header = yaml.dump(fm, allow_unicode=True, default_flow_style=False).strip()
+    return f"---\n{header}\n---\n{body}"
+```
+
+`allow_unicode=True`는 한글 등 비ASCII 값이 `\uXXXX` 이스케이프 없이 출력되도록 합니다.
+
+---
+
+#### `first_title(body: str) -> str`
+
+본문에서 첫 번째 `# 제목`을 추출합니다. `seminar_title`이 없을 때 랜딩 카드 제목으로 사용됩니다.
+
+```python
+def first_title(body: str) -> str:
+    m = re.search(r"^#\s+(.+)$", body, re.MULTILINE)
+    return m.group(1).strip() if m else "Untitled"
+```
+
+`# 제목` 형식(공백 포함 `#\s+`)만 매칭합니다. `##`나 `###`는 무시합니다.
+
+---
+
+#### `first_desc(body: str) -> str`
+
+랜딩 카드 설명문을 추출합니다. 우선순위:
+
+1. `> 인용문` 형식 (첫 번째 blockquote)
+2. 일반 텍스트 단락 (제목/코드/리스트/표/인용 이외의 첫 단락, 100자 이내)
+
+```python
+def first_desc(body: str) -> str:
+    m = re.search(r"^>\s+(.+)$", body, re.MULTILINE)
+    if m:
+        return m.group(1).strip()
+    for block in re.split(r"\n{2,}", body.strip()):
+        b = block.strip()
+        if b and b[0] not in "#`-|>":    # 제목/코드/리스트/표/인용 제외
+            return b[:100] + ("…" if len(b) > 100 else "")
+    return ""
+```
+
+**권장 패턴**: 커버 슬라이드에 `> 한줄 설명`을 작성하면 항상 깔끔하게 추출됩니다.
+
+---
+
+#### `slide_count(body: str) -> int`
+
+`##` 제목의 개수를 세어 슬라이드 수를 추정합니다.
+
+```python
+def slide_count(body: str) -> int:
+    h2 = len(re.findall(r"^##\s", body, re.MULTILINE))
+    return max(h2, 1)    # 최소 1 보장
+```
+
+`headingDivider: 2` 기준입니다. `headingDivider`를 다른 값으로 변경해도 이 함수는 업데이트되지 않으므로, 슬라이드 수는 어림값입니다.
+
+---
+
+#### `_chrome_flags() -> list[str]`
+
+Marp CLI에 전달할 Chromium 관련 플래그를 구성합니다.
+
+```python
+def _chrome_flags() -> list[str]:
+    flags = [
+        "--chrome-arg=--no-sandbox",            # 루트 프로세스에서 sandbox 비활성화
+        "--chrome-arg=--disable-setuid-sandbox", # setuid sandbox 비활성화
+        "--chrome-arg=--disable-dev-shm-usage",  # /dev/shm 부족 환경(Docker) 대응
+    ]
+    chrome_path = (
+        os.environ.get("PUPPETEER_EXECUTABLE_PATH")
+        or os.environ.get("CHROME_PATH")
+    )
+    if chrome_path and pathlib.Path(chrome_path).exists():
+        flags = ["--chrome-path", chrome_path] + flags   # chrome-path가 앞에 와야 함
+    return flags
+```
+
+**샌드박스 비활성화 이유**: GitHub Actions `ubuntu-latest`는 컨테이너 내부에서 실행되므로 Chrome의 기본 샌드박스가 동작하지 않습니다. `--no-sandbox` 없이 실행하면 Chromium이 즉시 종료됩니다.
+
+**환경변수 우선순위**: `PUPPETEER_EXECUTABLE_PATH` → `CHROME_PATH` → Marp CLI 자동 탐지 (Puppeteer 내장 Chromium)
+
+---
+
+#### `_marp(args: list[str], label: str) -> bool`
+
+Marp CLI를 subprocess로 실행하는 공통 래퍼입니다.
+
+```python
+def _marp(args: list[str], label: str) -> bool:
+    r = subprocess.run(
+        ["npx", "--yes", "@marp-team/marp-cli"] + args,
+        capture_output=True, text=True,
+    )
+    if r.returncode != 0:
+        print(f"  ⚠  {label}:\n{r.stderr.strip()[:300]}", file=sys.stderr)
+        return False
+    return True
+```
+
+`npx --yes`는 `@marp-team/marp-cli`가 없으면 자동 설치합니다. stderr는 300자로 잘라 출력합니다.
+
+**반환값**: `True` (성공) / `False` (실패). 호출자는 이 값으로 export 딕셔너리에 포함 여부를 결정합니다.
+
+---
+
+#### `build_exports(tmp, stem, out_dir) -> dict`
+
+PDF, PPTX, PNG를 순서대로 시도하고, 성공한 포맷만 딕셔너리로 반환합니다.
+
+```python
+def build_exports(tmp: pathlib.Path, stem: str, out_dir: pathlib.Path) -> dict:
+    exports: dict = {}
+    chrome = _chrome_flags()
+    base   = [str(tmp), "--theme-set", str(THEMES_DIR), "--allow-local-files"]
+
+    # PDF: Chromium 필요
+    pdf_out = out_dir / f"{stem}.pdf"
+    if _marp(base + chrome + ["--pdf", "--output", str(pdf_out)], f"{stem} PDF"):
+        exports["pdf"] = f"./{stem}/{stem}.pdf"
+
+    # PPTX: Chromium 불필요 (pptxgenjs 내부 사용)
+    pptx_out = out_dir / f"{stem}.pptx"
+    pptx_base = [str(tmp), "--theme-set", str(THEMES_DIR)]   # chrome 플래그 제외
+    if _marp(pptx_base + ["--pptx", "--output", str(pptx_out)], f"{stem} PPTX"):
+        exports["pptx"] = f"./{stem}/{stem}.pptx"
+
+    # PNG: Chromium 필요. 출력: stem.001.png, stem.002.png, ...
+    png_dir = out_dir / "png"
+    png_dir.mkdir(exist_ok=True)
+    png_prefix = png_dir / stem    # Marp가 이 경로에 .NNN.png를 덧붙임
+    if _marp(base + chrome + ["--images", "png", "--output", str(png_prefix)], f"{stem} PNG"):
+        png_files = sorted(png_dir.glob(f"{stem}*.png"))
+        if png_files:
+            exports["png_count"] = len(png_files)
+            exports["png_dir"]   = f"./{stem}/png/"
+            _build_png_gallery(stem, png_files, png_dir)
+
+    return exports
+```
+
+반환 딕셔너리 스키마:
+```python
+{
+    "pdf":       str,   # 랜딩 페이지 기준 상대 경로 (예: "./my-talk/my-talk.pdf")
+    "pptx":      str,   # 랜딩 페이지 기준 상대 경로
+    "png_count": int,   # PNG 파일 개수
+    "png_dir":   str,   # PNG 갤러리 디렉터리 상대 경로
+}
+# 실패한 포맷의 키는 딕셔너리에 포함되지 않음
+```
+
+---
+
+#### `build_slide(md_path, config) -> dict | None`
+
+단일 MD 파일을 처리하는 메인 함수입니다.
+
+```python
+def build_slide(md_path: pathlib.Path, config: dict) -> dict | None:
+    stem = md_path.stem
+    text = md_path.read_text(encoding="utf-8")
+    fm, body = split_fm(text)
+
+    # ── seminar_* 필드 추출 (pop → Marp에 전달 안 됨) ──────────────
+    default_theme   = config.get("theme", "default")
+    seminar_theme   = fm.pop("seminar_theme", None) or default_theme
+    seminar_title   = fm.pop("seminar_title", None) or first_title(body)
+    seminar_visible = fm.pop("seminar_visible", True)
+
+    # ── Marp 필수 필드 기본값 주입 (이미 있으면 덮어쓰지 않음) ────────
+    fm.setdefault("marp", True)          # Marp 처리 활성화
+    fm["theme"] = seminar_theme          # 테마는 항상 덮어씀
+    fm.setdefault("headingDivider", 2)   # ## 으로 분할
+    fm.setdefault("paginate", True)      # 페이지 번호 표시
+
+    content = build_fm(fm, body)
+
+    # ── 임시 파일에 써서 Marp CLI에 넘김 ─────────────────────────────
+    with tempfile.NamedTemporaryFile(
+        mode="w", encoding="utf-8", suffix=".md",
+        dir=SLIDES_DIR, delete=False, prefix="_build_"
+    ) as f:
+        f.write(content)
+        tmp = pathlib.Path(f.name)
+
+    try:
+        ok = _marp([str(tmp), "--html",
+                    "--output", str(out_html),
+                    "--theme-set", str(THEMES_DIR)], stem)
+        if not ok:
+            return None    # HTML 빌드 실패 → 이 슬라이드 전체 스킵
+        exports = build_exports(tmp, stem, out_dir)
+    finally:
+        tmp.unlink(missing_ok=True)    # 임시 파일 반드시 삭제
+
+    return {
+        "stem": stem, "title": seminar_title, "desc": first_desc(body),
+        "theme": seminar_theme, "slides": slide_count(body),
+        "visible": seminar_visible, "url": f"./{stem}/",
+        "exports": exports,
+    }
+```
+
+**임시 파일 패턴**: Marp CLI는 `--theme-set`으로 테마 디렉터리를 받을 때, 입력 파일의 위치를 기준으로 상대 경로를 해석합니다. 이 때문에 임시 파일을 `SLIDES_DIR` 내부에 생성합니다 (`dir=SLIDES_DIR`). `finally` 블록으로 예외 발생 시에도 임시 파일이 남지 않도록 보장합니다.
+
+---
+
+#### `generate_landing(seminars, config) -> None`
+
+모든 슬라이드의 정보 딕셔너리를 받아 `dist/index.html`을 생성합니다.
+
+```python
+def generate_landing(seminars: list[dict], config: dict) -> None:
+    title       = config.get("title", "세미나 모음")
+    description = config.get("description", "…")
+
+    visible = [s for s in seminars if s["visible"]]   # visible=False 필터링
+    cards_html  = "\n".join(_seminar_card(s) for s in visible)
+    themes_html = "\n".join(_theme_card(k) for k in THEME_META)
+
+    html = f"""…{_LANDING_CSS}…{cards_html}…{themes_html}…"""
+    (DIST_DIR / "index.html").write_text(html, encoding="utf-8")
+```
+
+랜딩 페이지는 **순수 HTML/CSS**로 생성됩니다. 외부 CDN, 자바스크립트 의존성이 없습니다.
+
+---
+
+#### `main() -> None`
+
+엔트리포인트입니다.
+
+```python
+def main() -> None:
+    config = yaml.safe_load(CONFIG_PATH.read_text(encoding="utf-8")) or {}
+
+    if DIST_DIR.exists():
+        shutil.rmtree(DIST_DIR)    # 이전 빌드 완전 삭제 (증분 빌드 없음)
+    DIST_DIR.mkdir()
+
+    md_files = sorted(SLIDES_DIR.glob("*.md"))   # 알파벳 순 정렬 → 랜딩 카드 순서
+    …
+    for f in md_files:
+        info = build_slide(f, config)
+        if info:
+            seminars.append(info)
+
+    generate_landing(seminars, config)
+```
+
+**증분 빌드 없음**: 매 실행마다 `dist/`를 완전히 삭제하고 재생성합니다. 슬라이드 수가 많아도 대부분 수 초 내에 완료됩니다 (HTML만 빌드 시).
+
+---
+
+### 11.3 Frontmatter 처리 흐름 상세
+
+```
+원본 MD 파일
+┌─────────────────────────────┐
+│ ---                         │
+│ seminar_theme: tech-dark    │  ← build.py가 pop()으로 추출 후 제거
+│ seminar_title: "제목"        │  ← build.py가 pop()으로 추출 후 제거
+│ seminar_visible: false      │  ← build.py가 pop()으로 추출 후 제거
+│ paginate: false             │  ← 그대로 Marp에 전달
+│ size: 4:3                   │  ← 그대로 Marp에 전달
+│ ---                         │
+│ # 슬라이드 본문 …            │
+└─────────────────────────────┘
+            │
+            ▼  split_fm() + pop() + setdefault()
+┌─────────────────────────────┐
+│ ---                         │
+│ marp: true                  │  ← 자동 주입 (setdefault)
+│ theme: tech-dark            │  ← seminar_theme 값으로 대체
+│ headingDivider: 2           │  ← 자동 주입 (setdefault)
+│ paginate: false             │  ← 원본 값 유지
+│ size: 4:3                   │  ← 원본 값 유지
+│ ---                         │
+│ # 슬라이드 본문 …            │
+└─────────────────────────────┘
+            │
+            ▼  임시 파일 → Marp CLI
+┌─────────────────────────────┐
+│ dist/<stem>/index.html      │  HTML 발표 슬라이드
+│ dist/<stem>/<stem>.pdf      │  PDF
+│ dist/<stem>/<stem>.pptx     │  PowerPoint
+│ dist/<stem>/png/            │  PNG 이미지
+└─────────────────────────────┘
+```
+
+**`setdefault` vs 직접 대입:**
+- `marp`, `headingDivider`, `paginate`: `setdefault` → 사용자가 명시한 값이 있으면 보존
+- `theme`: 항상 `fm["theme"] = seminar_theme`으로 덮어씀 (Marp 기본 `theme` 필드와 `seminar_theme`이 충돌하지 않도록)
+
+---
+
+### 11.4 GitHub Actions 파이프라인 상세
+
+#### 파이프라인 구조
+
+```yaml
+# .github/workflows/deploy.yml
+
+on:
+  push:
+    branches: [main]        # main 브랜치 push 시 자동 실행
+  workflow_dispatch:        # 수동 실행 지원
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write           # OIDC 토큰 (비밀번호 없이 Pages 배포)
+
+concurrency:
+  group: pages
+  cancel-in-progress: false # 동시 배포 방지 (현재 배포 완료 후 다음 실행)
+```
+
+#### Job 1: `build`
+
+| 스텝 | 역할 | 비고 |
+|------|------|------|
+| `actions/checkout@v4` | 소스 체크아웃 | `--depth 1` 기본 (전체 히스토리 불필요) |
+| `actions/setup-node@v4` | Node.js 20 설치 | Marp CLI 실행 환경 |
+| `actions/setup-python@v5` | Python 3.12 설치 | build.py 실행 환경 |
+| `npm install -g @marp-team/marp-cli` | Marp CLI 전역 설치 | npx 캐시 없이 직접 설치로 속도 향상 |
+| `pip install pyyaml` | PyYAML 설치 | build.py 의존성 |
+| **Find Chrome executable** | Chrome 경로 탐지 | `PUPPETEER_EXECUTABLE_PATH` 환경변수 설정 |
+| `python scripts/build.py` | 빌드 실행 | `dist/` 생성 |
+| `actions/upload-pages-artifact@v3` | 빌드 결과 업로드 | `dist/`를 Pages artifact로 패키징 |
+
+#### Chrome 탐지 스텝 상세
+
+```bash
+CHROME=$(which google-chrome-stable \
+      || which google-chrome \
+      || which chromium-browser \
+      || which chromium \
+      || true)        # 실패해도 전체 워크플로우 중단 안 함
+
+if [ -n "$CHROME" ]; then
+    echo "PUPPETEER_EXECUTABLE_PATH=$CHROME" >> $GITHUB_ENV
+    # $GITHUB_ENV에 쓰면 이후 모든 스텝에서 환경변수로 사용 가능
+fi
+```
+
+`ubuntu-latest`에는 `google-chrome-stable`이 기본 설치되어 있으므로 첫 번째 `which`에서 성공합니다. 경로는 보통 `/usr/bin/google-chrome-stable`입니다.
+
+#### Job 2: `deploy`
+
+```yaml
+deploy:
+  needs: build              # build 완료 후 실행
+  environment:
+    name: github-pages
+    url: ${{ steps.deployment.outputs.page_url }}
+  steps:
+    - uses: actions/deploy-pages@v4   # upload-pages-artifact의 결과를 Pages에 게시
+```
+
+`actions/deploy-pages`는 GitHub의 공식 Pages 배포 액션입니다. OIDC 토큰(`id-token: write`)으로 인증하므로, `GITHUB_TOKEN`이나 PAT가 필요 없습니다.
+
+---
+
+### 11.5 출력 디렉터리 구조
+
+```
+dist/
+├── index.html                         ← 랜딩 페이지 (generate_landing 생성)
+│
+├── <stem-A>/                          ← slides/stem-A.md 빌드 결과
+│   ├── index.html                     ← HTML 발표 슬라이드 (Marp 생성)
+│   ├── stem-A.pdf                     ← PDF (Chromium 필요, 없으면 생성 안 됨)
+│   ├── stem-A.pptx                    ← PowerPoint
+│   └── png/
+│       ├── index.html                 ← PNG 갤러리 (_build_png_gallery 생성)
+│       ├── stem-A.001.png             ← 슬라이드 1 (Marp 네이밍 규칙)
+│       ├── stem-A.002.png
+│       └── stem-A.NNN.png
+│
+└── <stem-B>/
+    └── …
+```
+
+**URL 매핑** (GitHub Pages `/<repo>/` 기준):
+```
+dist/index.html          → https://<user>.github.io/<repo>/
+dist/stem-A/index.html   → https://<user>.github.io/<repo>/stem-A/
+dist/stem-A/stem-A.pdf   → https://<user>.github.io/<repo>/stem-A/stem-A.pdf
+dist/stem-A/png/         → https://<user>.github.io/<repo>/stem-A/png/
+```
+
+---
+
+### 11.6 랜딩 페이지 HTML 구조
+
+랜딩 페이지는 `build.py` 내 `_LANDING_CSS` 상수와 `generate_landing()` 함수로 완전히 인라인 생성됩니다. 외부 파일 의존성이 없습니다.
+
+#### 세미나 카드 구조
+
+```html
+<div class="card">
+  <a class="card-body" href="./<stem>/">
+    <!-- 카드 본문: 클릭 시 HTML 슬라이드로 이동 -->
+    <span class="badge">Tech Dark</span>
+    <h3>슬라이드 제목</h3>
+    <p>설명 텍스트</p>
+  </a>
+  <div class="card-foot">
+    <span class="n-slides">12 slides</span>
+    <div class="card-actions">
+      <a class="go-btn" href="./<stem>/">발표 시작 →</a>
+      <!-- 성공한 export 포맷만 표시 -->
+      <a class="dl-btn dl-pdf"  href="./<stem>/<stem>.pdf"  download>PDF</a>
+      <a class="dl-btn dl-pptx" href="./<stem>/<stem>.pptx" download>PPTX</a>
+      <a class="dl-btn dl-png"  href="./<stem>/png/">PNG <span class="dl-cnt">12</span></a>
+    </div>
+  </div>
+</div>
+```
+
+**HTML 표준 준수**: `<a>` 안에 `<a>`를 중첩할 수 없으므로(HTML 표준 위반), 카드 전체를 `<a>`로 감싸는 대신 `<div class="card">` + 내부 `<a class="card-body">` 구조를 사용합니다.
+
+---
+
+### 11.7 테마 시스템 내부 구조
+
+#### 테마 CSS 로딩 방식
+
+Marp CLI에 `--theme-set themes/` 옵션을 전달하면, Marp가 해당 디렉터리의 모든 `.css` 파일을 스캔합니다. 각 파일의 첫 줄에서 `/* @theme <name> */` 패턴을 찾아 테마 이름으로 등록합니다.
+
+```
+themes/
+├── catppuccin.css       ← /* @theme catppuccin */
+├── gradient-dark.css    ← /* @theme gradient-dark */
+├── minimal-white.css    ← /* @theme minimal-white */
+├── tech-dark.css        ← /* @theme tech-dark */
+├── ocean.css            ← /* @theme ocean */
+└── corporate.css        ← /* @theme corporate */
+```
+
+`build.py`나 `seminar.config.yml`에 테마 CSS 파일을 등록할 필요 없습니다. `themes/`에 파일을 추가하는 것만으로 자동 인식됩니다.
+
+#### `THEME_META` 딕셔너리
+
+랜딩 페이지 테마 갤러리는 `build.py` 상단의 `THEME_META` 딕셔너리를 사용합니다:
+
+```python
+THEME_META: dict[str, tuple[str, str, list[str]]] = {
+    "catppuccin": (
+        "Catppuccin",           # 표시 이름
+        "파스텔 다크 · Mocha",   # 설명
+        ["#1e1e2e", "#cba6f7", "#89b4fa", "#a6e3a1", "#f38ba8"]  # 팔레트 5색
+    ),
+    …
+}
+```
+
+새 커스텀 테마를 추가할 때 `THEME_META`에도 항목을 추가하면 테마 갤러리에 표시됩니다. 추가하지 않아도 테마 자체는 동작합니다.
+
+---
+
+### 11.8 확장 포인트
+
+#### 새 export 포맷 추가
+
+`build_exports()` 함수에 새 포맷 블록을 추가합니다:
+
+```python
+def build_exports(tmp, stem, out_dir) -> dict:
+    exports = {}
+    # … 기존 PDF, PPTX, PNG 블록 …
+
+    # 새 포맷 추가 예시: GIF
+    gif_out = out_dir / f"{stem}.gif"
+    if _marp(base + chrome + ["--images", "gif", "--output", str(gif_out)], f"{stem} GIF"):
+        exports["gif"] = f"./{stem}/{stem}.gif"
+
+    return exports
+```
+
+이후 `_seminar_card()`에 해당 버튼 HTML을 추가하면 랜딩 페이지에 자동 반영됩니다.
+
+#### 슬라이드 순서 제어
+
+현재 `sorted(SLIDES_DIR.glob("*.md"))`로 알파벳 순 정렬합니다. 다른 정렬 기준이 필요하다면 `main()`의 이 줄을 수정합니다:
+
+```python
+# 파일 수정 시각 역순 (최신 파일이 먼저)
+md_files = sorted(SLIDES_DIR.glob("*.md"), key=lambda p: p.stat().st_mtime, reverse=True)
+
+# seminar.config.yml에서 순서 명시 (config에 order 키 추가 필요)
+order = config.get("order", [])
+md_files = sorted(SLIDES_DIR.glob("*.md"),
+                  key=lambda p: order.index(p.stem) if p.stem in order else 999)
+```
+
+#### 새 `seminar_*` 커스텀 필드 추가
+
+`build_slide()` 내 `fm.pop()` 블록에 추가하면 됩니다:
+
+```python
+# 예: seminar_tags — 랜딩 카드에 태그 표시
+seminar_tags = fm.pop("seminar_tags", [])   # 리스트, 기본 빈 리스트
+```
+
+이후 반환 딕셔너리에 추가하고, `_seminar_card()`에서 렌더링합니다.
+
+#### 랜딩 페이지 스타일 변경
+
+`build.py` 상단의 `_LANDING_CSS` 문자열을 직접 수정하거나, 외부 CSS 파일로 분리할 수 있습니다:
+
+```python
+# 외부 파일로 분리하는 경우
+_LANDING_CSS = (ROOT / "assets" / "landing.css").read_text(encoding="utf-8")
+```
+
+단, 이 경우 해당 파일도 `dist/`에 복사하거나 인라인으로 삽입해야 합니다.
+
+---
+
+### 11.9 의존성 버전 및 호환성
+
+| 의존성 | 최소 버전 | 권장 버전 | 비고 |
+|--------|-----------|-----------|------|
+| Python | 3.10 | 3.12 | `dict | None` 타입 힌트 사용 |
+| PyYAML | 5.x | 6.x | `yaml.safe_load` 사용 |
+| Node.js | 18 | 20 (LTS) | `npx --yes` 지원 |
+| @marp-team/marp-cli | 3.x | 최신 | `--images png` 지원 3.0+ |
+| Chromium/Chrome | 110+ | 최신 | PDF 렌더링, `--no-sandbox` 지원 |
+
+#### GitHub Actions 러너 환경 (`ubuntu-latest`)
+
+| 항목 | 값 | 비고 |
+|------|----|------|
+| OS | Ubuntu 22.04 LTS | |
+| Node.js | 20 (setup-node으로 설치) | |
+| Python | 3.12 (setup-python으로 설치) | |
+| Chrome | `/usr/bin/google-chrome-stable` | 러너에 기본 설치 |
+| Chrome 버전 | ~122+ | 러너 이미지마다 다름 |
+| `/dev/shm` | 64MB (제한적) | `--disable-dev-shm-usage` 필요 이유 |
+
+---
+
+### 11.10 로컬 디버깅 팁
+
+#### Marp CLI 단독 테스트
+
+`build.py` 없이 Marp CLI를 직접 실행하여 문제를 격리합니다:
+
+```bash
+# HTML 변환
+npx @marp-team/marp-cli slides/my-talk.md \
+  --html \
+  --theme-set themes/ \
+  --output /tmp/test.html
+
+# PDF 변환 (Chrome 경로 명시)
+PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome \
+npx @marp-team/marp-cli slides/my-talk.md \
+  --pdf \
+  --theme-set themes/ \
+  --allow-local-files \
+  --chrome-arg=--no-sandbox \
+  --output /tmp/test.pdf
+
+# 특정 테마만 확인 (테마 이름 직접 지정)
+npx @marp-team/marp-cli slides/my-talk.md \
+  --theme catppuccin \
+  --theme-set themes/ \
+  --preview
+```
+
+#### build.py 상세 로그
+
+`subprocess.run()` 결과를 출력하도록 임시로 수정합니다:
+
+```python
+# _marp() 함수에서 성공 시에도 stderr 출력
+def _marp(args, label):
+    r = subprocess.run(…)
+    print(f"[DEBUG] {label} returncode={r.returncode}", file=sys.stderr)
+    if r.stdout:
+        print(f"[DEBUG] stdout: {r.stdout[:200]}", file=sys.stderr)
+    print(f"[DEBUG] stderr: {r.stderr[:500]}", file=sys.stderr)
+    …
+```
+
+#### 임시 파일 보존하여 Marp 입력 확인
+
+`build_slide()`의 `finally` 블록을 임시로 주석 처리하면 `slides/_build_*.md` 파일이 남아 Marp에 전달된 실제 내용을 확인할 수 있습니다:
+
+```python
+finally:
+    pass  # tmp.unlink(missing_ok=True)  ← 주석 처리
+    # 확인 후: ls slides/_build_*.md
 ```

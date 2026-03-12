@@ -15,7 +15,8 @@
 section {
   background: var(--mw-bg);
   color: var(--mw-text);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+  font-family: 'Noto Sans CJK KR', 'Noto Sans KR', -apple-system, BlinkMacSystemFont,
+               'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
   font-size: 32px;
   padding: 60px 80px;
   width: 1280px;

@@ -37,6 +37,13 @@ jobs:
       - name: Install Python dependencies
         run: pip install pyyaml
 
+      - name: Install Korean fonts
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y fonts-noto-cjk
+          fc-cache -f
+          echo "Korean fonts installed: $(fc-list :lang=ko | head -3)"
+
       - name: Find Chrome executable
         run: |
           CHROME=$(which google-chrome-stable || which google-chrome || which chromium-browser || which chromium || true)
