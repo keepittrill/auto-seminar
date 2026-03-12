@@ -1,0 +1,145 @@
+/* @theme tech-dark */
+
+:root {
+  --td-bg:      #0d1117;
+  --td-surface: #161b22;
+  --td-border:  #30363d;
+  --td-text:    #e6edf3;
+  --td-muted:   #8b949e;
+  --td-green:   #00ff88;
+  --td-blue:    #58a6ff;
+  --td-orange:  #f0883e;
+  --td-purple:  #d2a8ff;
+  --td-yellow:  #e3b341;
+}
+
+section {
+  background: var(--td-bg);
+  color: var(--td-text);
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Courier New', monospace;
+  font-size: 28px;
+  padding: 50px 70px;
+  width: 1280px;
+  height: 720px;
+}
+
+h1 {
+  font-size: 1.6em;
+  font-weight: 700;
+  color: var(--td-green);
+  border-left: 4px solid var(--td-green);
+  padding-left: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+h2 {
+  font-size: 1.3em;
+  color: var(--td-blue);
+  font-weight: 600;
+  margin-bottom: 0.4em;
+}
+
+h2::before {
+  content: "# ";
+  color: var(--td-muted);
+}
+
+h3 {
+  font-size: 1.05em;
+  color: var(--td-orange);
+  font-weight: 600;
+  margin-bottom: 0.3em;
+}
+
+h3::before {
+  content: "## ";
+  color: var(--td-muted);
+}
+
+code {
+  font-size: 0.85em;
+  background: var(--td-surface);
+  color: var(--td-green);
+  border-radius: 4px;
+  padding: 2px 6px;
+  border: 1px solid var(--td-border);
+}
+
+pre {
+  background: var(--td-surface);
+  border: 1px solid var(--td-border);
+  border-radius: 8px;
+  padding: 0.8em 1em;
+  margin: 0.5em 0;
+}
+
+pre code {
+  background: none;
+  color: var(--td-text);
+  padding: 0;
+  font-size: 0.8em;
+  border: none;
+  line-height: 1.5;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8em;
+  border: 1px solid var(--td-border);
+}
+
+th {
+  background: var(--td-surface);
+  color: var(--td-blue);
+  font-weight: 700;
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--td-border);
+}
+
+td {
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--td-border);
+}
+
+tr:nth-child(even) td {
+  background: rgba(22, 27, 34, 0.7);
+}
+
+ul, ol {
+  padding-left: 1.5em;
+  line-height: 1.8;
+}
+
+li strong {
+  color: var(--td-yellow);
+}
+
+li::marker {
+  color: var(--td-green);
+}
+
+blockquote {
+  border-left: 4px solid var(--td-purple);
+  background: var(--td-surface);
+  color: var(--td-muted);
+  padding: 0.5em 1em;
+  font-style: normal;
+}
+
+a {
+  color: var(--td-blue);
+  text-decoration: none;
+}
+
+section::after {
+  color: var(--td-muted);
+  font-size: 0.6em;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--td-border);
+  margin: 0.8em 0;
+}

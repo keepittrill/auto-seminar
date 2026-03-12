@@ -1,0 +1,140 @@
+/* @theme corporate */
+
+:root {
+  --co-bg:      #ffffff;
+  --co-bg2:     #f8fafc;
+  --co-bg3:     #f1f5f9;
+  --co-border:  #e2e8f0;
+  --co-text:    #0f172a;
+  --co-muted:   #64748b;
+  --co-navy:    #1a2e4a;
+  --co-blue:    #2563eb;
+  --co-blue2:   #1d4ed8;
+}
+
+section {
+  background: var(--co-bg);
+  color: var(--co-text);
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Noto Sans KR', sans-serif;
+  font-size: 32px;
+  padding: 60px 80px;
+  width: 1280px;
+  height: 720px;
+}
+
+h1 {
+  color: var(--co-navy);
+  font-size: 1.6em;
+  font-weight: 800;
+  border-bottom: 3px solid var(--co-blue);
+  padding-bottom: 0.3em;
+  margin-bottom: 0.5em;
+}
+
+h2 {
+  color: var(--co-blue);
+  font-size: 1.3em;
+  font-weight: 700;
+  margin-bottom: 0.4em;
+}
+
+h3 {
+  color: var(--co-navy);
+  font-size: 1.05em;
+  font-weight: 600;
+  margin-bottom: 0.3em;
+}
+
+code {
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 0.8em;
+  background: var(--co-bg3);
+  color: var(--co-blue2);
+  border-radius: 4px;
+  padding: 2px 6px;
+  border: 1px solid var(--co-border);
+}
+
+pre {
+  background: var(--co-bg2);
+  border: 1px solid var(--co-border);
+  border-left: 4px solid var(--co-blue);
+  border-radius: 8px;
+  padding: 0.8em 1em;
+  margin: 0.5em 0;
+}
+
+pre code {
+  background: none;
+  color: var(--co-text);
+  padding: 0;
+  font-size: 0.78em;
+  border: none;
+  line-height: 1.5;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82em;
+  border: 1px solid var(--co-border);
+}
+
+th {
+  background: var(--co-navy);
+  color: #ffffff;
+  font-weight: 700;
+  padding: 10px 14px;
+  text-align: left;
+}
+
+td {
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--co-border);
+}
+
+tr:nth-child(even) td {
+  background: var(--co-bg2);
+}
+
+ul, ol {
+  padding-left: 1.5em;
+  line-height: 1.8;
+}
+
+li::marker {
+  color: var(--co-blue);
+}
+
+li strong {
+  color: var(--co-navy);
+}
+
+blockquote {
+  border-left: 4px solid var(--co-blue);
+  background: var(--co-bg2);
+  color: var(--co-muted);
+  padding: 0.5em 1em;
+  border-radius: 0 6px 6px 0;
+  font-style: italic;
+}
+
+a {
+  color: var(--co-blue);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+section::after {
+  color: var(--co-muted);
+  font-size: 0.6em;
+}
+
+hr {
+  border: none;
+  border-top: 2px solid var(--co-border);
+  margin: 0.8em 0;
+}

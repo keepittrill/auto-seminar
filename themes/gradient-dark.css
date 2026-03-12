@@ -1,0 +1,129 @@
+/* @theme gradient-dark */
+
+:root {
+  --gd-bg-start: #0f0c29;
+  --gd-bg-mid:   #302b63;
+  --gd-bg-end:   #24243e;
+  --gd-text:     #f0f0f0;
+  --gd-muted:    #8892b0;
+  --gd-accent1:  #e100ff;
+  --gd-accent2:  #00d2ff;
+  --gd-code-bg:  rgba(255, 255, 255, 0.1);
+  --gd-surface:  rgba(255, 255, 255, 0.07);
+  --gd-border:   rgba(255, 255, 255, 0.15);
+}
+
+section {
+  background: linear-gradient(135deg, var(--gd-bg-start), var(--gd-bg-mid), var(--gd-bg-end));
+  color: var(--gd-text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+  font-size: 32px;
+  padding: 60px 80px;
+  width: 1280px;
+  height: 720px;
+}
+
+h1 {
+  font-size: 1.6em;
+  font-weight: 800;
+  background: linear-gradient(90deg, var(--gd-accent1), var(--gd-accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.5em;
+}
+
+h2 {
+  font-size: 1.3em;
+  color: var(--gd-accent2);
+  font-weight: 700;
+  margin-bottom: 0.4em;
+}
+
+h3 {
+  font-size: 1.05em;
+  color: var(--gd-accent1);
+  font-weight: 600;
+  margin-bottom: 0.3em;
+}
+
+code {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.8em;
+  background: var(--gd-code-bg);
+  color: var(--gd-accent2);
+  border-radius: 4px;
+  padding: 2px 6px;
+  border: 1px solid var(--gd-border);
+}
+
+pre {
+  background: rgba(0, 0, 0, 0.4);
+  border-left: 3px solid var(--gd-accent1);
+  border-radius: 8px;
+  padding: 0.8em 1em;
+  margin: 0.5em 0;
+}
+
+pre code {
+  background: none;
+  color: var(--gd-text);
+  padding: 0;
+  font-size: 0.78em;
+  border: none;
+  line-height: 1.5;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82em;
+}
+
+th {
+  background: var(--gd-surface);
+  color: var(--gd-accent2);
+  font-weight: 600;
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--gd-border);
+}
+
+td {
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--gd-border);
+}
+
+ul, ol {
+  padding-left: 1.5em;
+  line-height: 1.8;
+}
+
+li strong {
+  color: var(--gd-accent2);
+}
+
+blockquote {
+  border-left: 4px solid var(--gd-accent1);
+  background: var(--gd-surface);
+  color: var(--gd-muted);
+  padding: 0.5em 1em;
+  border-radius: 0 6px 6px 0;
+  font-style: italic;
+}
+
+a {
+  color: var(--gd-accent2);
+  text-decoration: none;
+}
+
+section::after {
+  color: var(--gd-muted);
+  font-size: 0.6em;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--gd-border);
+  margin: 0.8em 0;
+}

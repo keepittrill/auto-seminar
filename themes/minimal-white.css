@@ -1,0 +1,133 @@
+/* @theme minimal-white */
+
+:root {
+  --mw-bg:      #ffffff;
+  --mw-bg2:     #f8fafc;
+  --mw-border:  #e2e8f0;
+  --mw-text:    #1e293b;
+  --mw-muted:   #64748b;
+  --mw-accent:  #4a90e2;
+  --mw-accent2: #7c3aed;
+  --mw-code-bg: #f1f5f9;
+  --mw-code:    #0f172a;
+}
+
+section {
+  background: var(--mw-bg);
+  color: var(--mw-text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+  font-size: 32px;
+  padding: 60px 80px;
+  width: 1280px;
+  height: 720px;
+}
+
+h1 {
+  color: var(--mw-text);
+  font-size: 1.6em;
+  font-weight: 800;
+  border-bottom: 3px solid var(--mw-accent);
+  padding-bottom: 0.3em;
+  margin-bottom: 0.5em;
+}
+
+h2 {
+  color: var(--mw-accent2);
+  font-size: 1.3em;
+  font-weight: 700;
+  margin-bottom: 0.4em;
+}
+
+h3 {
+  color: var(--mw-accent);
+  font-size: 1.05em;
+  font-weight: 600;
+  margin-bottom: 0.3em;
+}
+
+code {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.8em;
+  background: var(--mw-code-bg);
+  color: #c7254e;
+  border-radius: 4px;
+  padding: 2px 6px;
+  border: 1px solid var(--mw-border);
+}
+
+pre {
+  background: var(--mw-code-bg);
+  border: 1px solid var(--mw-border);
+  border-left: 4px solid var(--mw-accent);
+  border-radius: 8px;
+  padding: 0.8em 1em;
+  margin: 0.5em 0;
+}
+
+pre code {
+  background: none;
+  color: var(--mw-code);
+  padding: 0;
+  font-size: 0.78em;
+  border: none;
+  line-height: 1.5;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82em;
+  border: 1px solid var(--mw-border);
+}
+
+th {
+  background: var(--mw-bg2);
+  color: var(--mw-text);
+  font-weight: 700;
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 2px solid var(--mw-accent);
+}
+
+td {
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--mw-border);
+}
+
+tr:nth-child(even) td {
+  background: var(--mw-bg2);
+}
+
+ul, ol {
+  padding-left: 1.5em;
+  line-height: 1.8;
+}
+
+blockquote {
+  border-left: 4px solid var(--mw-accent);
+  background: var(--mw-bg2);
+  color: var(--mw-muted);
+  padding: 0.5em 1em;
+  border-radius: 0 6px 6px 0;
+  font-style: italic;
+}
+
+a {
+  color: var(--mw-accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+section::after {
+  color: var(--mw-muted);
+  font-size: 0.6em;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--mw-border);
+  margin: 0.8em 0;
+}

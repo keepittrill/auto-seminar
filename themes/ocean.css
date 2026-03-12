@@ -1,0 +1,129 @@
+/* @theme ocean */
+
+:root {
+  --oc-bg:      #0a192f;
+  --oc-bg2:     #112240;
+  --oc-surface: #1d3461;
+  --oc-text:    #ccd6f6;
+  --oc-muted:   #8892b0;
+  --oc-teal:    #64ffda;
+  --oc-blue:    #48cae4;
+  --oc-light:   #e6f1ff;
+}
+
+section {
+  background: var(--oc-bg);
+  color: var(--oc-text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+  font-size: 32px;
+  padding: 60px 80px;
+  width: 1280px;
+  height: 720px;
+}
+
+h1 {
+  color: var(--oc-light);
+  font-size: 1.6em;
+  font-weight: 700;
+  margin-bottom: 0.5em;
+  text-shadow: 0 0 30px rgba(100, 255, 218, 0.3);
+}
+
+h2 {
+  color: var(--oc-teal);
+  font-size: 1.3em;
+  font-weight: 600;
+  margin-bottom: 0.4em;
+}
+
+h3 {
+  color: var(--oc-blue);
+  font-size: 1.05em;
+  font-weight: 600;
+  margin-bottom: 0.3em;
+}
+
+code {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.8em;
+  background: var(--oc-bg2);
+  color: var(--oc-teal);
+  border-radius: 4px;
+  padding: 2px 6px;
+  border: 1px solid var(--oc-surface);
+}
+
+pre {
+  background: var(--oc-bg2);
+  border-left: 4px solid var(--oc-teal);
+  border-radius: 8px;
+  padding: 0.8em 1em;
+  margin: 0.5em 0;
+}
+
+pre code {
+  background: none;
+  color: var(--oc-text);
+  padding: 0;
+  font-size: 0.78em;
+  border: none;
+  line-height: 1.5;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82em;
+}
+
+th {
+  background: var(--oc-bg2);
+  color: var(--oc-teal);
+  font-weight: 600;
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 2px solid var(--oc-surface);
+}
+
+td {
+  padding: 7px 12px;
+  border-bottom: 1px solid rgba(29, 52, 97, 0.8);
+}
+
+tr:nth-child(even) td {
+  background: rgba(17, 34, 64, 0.5);
+}
+
+ul, ol {
+  padding-left: 1.5em;
+  line-height: 1.8;
+}
+
+li strong {
+  color: var(--oc-teal);
+}
+
+blockquote {
+  border-left: 4px solid var(--oc-teal);
+  background: var(--oc-bg2);
+  color: var(--oc-muted);
+  padding: 0.5em 1em;
+  border-radius: 0 6px 6px 0;
+  font-style: italic;
+}
+
+a {
+  color: var(--oc-teal);
+  text-decoration: none;
+}
+
+section::after {
+  color: var(--oc-muted);
+  font-size: 0.6em;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--oc-surface);
+  margin: 0.8em 0;
+}

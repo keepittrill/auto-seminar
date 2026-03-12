@@ -1,0 +1,151 @@
+/* @theme catppuccin */
+
+:root {
+  --ctp-base:    #1e1e2e;
+  --ctp-mantle:  #181825;
+  --ctp-surface0:#313244;
+  --ctp-surface1:#45475a;
+  --ctp-overlay1:#7f849c;
+  --ctp-text:    #cdd6f4;
+  --ctp-subtext: #a6adc8;
+  --ctp-mauve:   #cba6f7;
+  --ctp-blue:    #89b4fa;
+  --ctp-teal:    #94e2d5;
+  --ctp-green:   #a6e3a1;
+  --ctp-yellow:  #f9e2af;
+  --ctp-peach:   #fab387;
+  --ctp-red:     #f38ba8;
+}
+
+section {
+  background-color: var(--ctp-base);
+  color: var(--ctp-text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+  font-size: 32px;
+  padding: 60px 80px;
+  width: 1280px;
+  height: 720px;
+}
+
+h1 {
+  color: var(--ctp-mauve);
+  font-size: 1.6em;
+  font-weight: 700;
+  border-bottom: 2px solid var(--ctp-surface0);
+  padding-bottom: 0.3em;
+  margin-bottom: 0.5em;
+}
+
+h2 {
+  color: var(--ctp-blue);
+  font-size: 1.3em;
+  font-weight: 600;
+  margin-bottom: 0.4em;
+}
+
+h3 {
+  color: var(--ctp-green);
+  font-size: 1.05em;
+  font-weight: 600;
+  margin-bottom: 0.3em;
+}
+
+h4 {
+  color: var(--ctp-yellow);
+  font-size: 0.95em;
+  font-weight: 600;
+}
+
+code {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 0.8em;
+  background: var(--ctp-surface0);
+  color: var(--ctp-peach);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+pre {
+  background: var(--ctp-mantle);
+  border-left: 4px solid var(--ctp-mauve);
+  border-radius: 8px;
+  padding: 0.8em 1em;
+  margin: 0.5em 0;
+  overflow: hidden;
+}
+
+pre code {
+  background: none;
+  color: var(--ctp-text);
+  padding: 0;
+  font-size: 0.78em;
+  border-radius: 0;
+  line-height: 1.5;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82em;
+}
+
+th {
+  background: var(--ctp-surface0);
+  color: var(--ctp-blue);
+  font-weight: 600;
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 2px solid var(--ctp-surface1);
+}
+
+td {
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--ctp-surface0);
+}
+
+tr:nth-child(even) td {
+  background: rgba(49, 50, 68, 0.4);
+}
+
+ul, ol {
+  padding-left: 1.5em;
+  line-height: 1.8;
+}
+
+li {
+  margin-bottom: 0.1em;
+}
+
+li strong {
+  color: var(--ctp-yellow);
+}
+
+blockquote {
+  border-left: 4px solid var(--ctp-mauve);
+  background: var(--ctp-surface0);
+  color: var(--ctp-subtext);
+  padding: 0.5em 1em;
+  border-radius: 0 6px 6px 0;
+  margin: 0.5em 0;
+  font-style: italic;
+}
+
+a {
+  color: var(--ctp-blue);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+section::after {
+  color: var(--ctp-overlay1);
+  font-size: 0.6em;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--ctp-surface1);
+  margin: 0.8em 0;
+}
