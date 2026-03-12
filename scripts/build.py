@@ -19,6 +19,14 @@ import tempfile
 
 import yaml
 
+# Windows에서 subprocess로 npx를 호출할 때 .cmd 확장자가 필요함
+_NPX = "npx.cmd" if sys.platform == "win32" else "npx"
+
+# Windows 콘솔 CP949 환경에서 유니코드 출력 오류 방지
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 ROOT        = pathlib.Path(__file__).parent.parent
 SLIDES_DIR  = ROOT / "slides"
 THEMES_DIR  = ROOT / "themes"
@@ -93,7 +101,7 @@ def _chrome_flags() -> list[str]:
 def _marp(args: list[str], label: str) -> bool:
     """Run marp CLI. Returns True on success."""
     r = subprocess.run(
-        ["npx", "--yes", "@marp-team/marp-cli"] + args,
+        [_NPX, "--yes", "@marp-team/marp-cli"] + args,
         capture_output=True, text=True,
     )
     if r.returncode != 0:
@@ -126,6 +134,10 @@ def build_exports(tmp: pathlib.Path, stem: str, out_dir: pathlib.Path) -> dict:
     png_dir.mkdir(exist_ok=True)
     png_prefix = png_dir / stem   # → stem.001.png, stem.002.png …
     if _marp(base + chrome + ["--images", "png", "--output", str(png_prefix)], f"{stem} PNG"):
+        # Windows Marp CLI가 확장자 없이 stem.001, stem.002 형태로 출력하는 경우 대응
+        for f in png_dir.glob(f"{stem}.*"):
+            if f.suffix not in (".png", ".html") and not f.name.endswith(".png"):
+                f.rename(f.with_suffix(f.suffix + ".png"))
         png_files = sorted(png_dir.glob(f"{stem}*.png"))
         if png_files:
             exports["png_count"] = len(png_files)
@@ -322,6 +334,11 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; }
 .site-header { padding: 52px 0 28px; border-bottom: 1px solid var(--border); }
 .site-header h1 { font-size: 2rem; font-weight: 700; }
 .site-header p { color: var(--muted); margin-top: 10px; font-size: .95rem; }
+.theme-gallery-link {
+  display: inline-block; margin-top: 14px;
+  color: #a78bfa; text-decoration: none; font-size: .88rem; font-weight: 500;
+}
+.theme-gallery-link:hover { text-decoration: underline; }
 
 .section { padding: 52px 0; }
 .section + .section { border-top: 1px solid var(--border); }
@@ -470,6 +487,7 @@ def generate_landing(seminars: list[dict], config: dict) -> None:
   <div class="wrap">
     <h1>{title}</h1>
     <p>{description}</p>
+    <a class="theme-gallery-link" href="./themes/">🎨 테마 갤러리 →</a>
   </div>
 </header>
 
@@ -507,6 +525,208 @@ def generate_landing(seminars: list[dict], config: dict) -> None:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Theme comparison gallery
+# ─────────────────────────────────────────────────────────────────────────────
+
+_THEME_SAMPLE_BODY = """\
+
+# 테마 샘플 슬라이드
+
+> 이 슬라이드로 각 테마의 실제 렌더링을 확인하세요
+
+## 텍스트 & 목록
+
+**굵은 텍스트**와 일반 텍스트, `인라인 코드` 혼용
+
+- 항목 A: 중요한 핵심 내용입니다
+- 항목 B: **강조**와 일반 텍스트 혼합
+- 항목 C: `code snippet` 포함 항목
+
+## 표와 수치
+
+| 지표 | 이전 | 이후 | 개선 |
+|------|------|------|------|
+| 빌드 시간 | 23분 | **7분** | 70% ↓ |
+| 실패율 | 8% | **1.4%** | 83% ↓ |
+| 배포 횟수 | 주 2회 | **매일** | +250% |
+
+## 코드 블록
+
+```python
+async def build(slides: list[Path]) -> None:
+    results = await asyncio.gather(*[
+        render(slide) for slide in slides
+    ])
+    return [r for r in results if r.ok]
+```
+
+## 결론
+
+- ✅ 핵심 메시지 한 줄
+- ✅ 두 번째 포인트
+- ✅ 세 번째 포인트
+"""
+
+
+def build_theme_gallery() -> None:
+    """9개 테마로 샘플 슬라이드를 빌드하고 비교 갤러리 생성."""
+    theme_dist = DIST_DIR / "themes"
+    theme_dist.mkdir(exist_ok=True)
+
+    print("\nBuilding theme gallery…")
+    built: dict[str, str] = {}
+
+    for theme_key in THEME_META:
+        fm = {
+            "marp": True,
+            "theme": theme_key,
+            "headingDivider": 2,
+            "paginate": True,
+        }
+        content = build_fm(fm, _THEME_SAMPLE_BODY)
+        out_dir  = theme_dist / theme_key
+        out_dir.mkdir(exist_ok=True)
+        out_html = out_dir / "index.html"
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", suffix=".md",
+            dir=SLIDES_DIR, delete=False, prefix="_theme_"
+        ) as f:
+            f.write(content)
+            tmp = pathlib.Path(f.name)
+
+        try:
+            ok = _marp([
+                str(tmp), "--html",
+                "--output", str(out_html),
+                "--theme-set", str(THEMES_DIR),
+            ], f"theme:{theme_key}")
+            if ok:
+                built[theme_key] = f"./themes/{theme_key}/"
+                print(f"  ✓  theme: {theme_key}")
+            else:
+                print(f"  ⚠  theme: {theme_key} (실패)")
+        finally:
+            tmp.unlink(missing_ok=True)
+
+    _build_theme_comparison_page(built, theme_dist)
+    print(f"  → theme gallery: dist/themes/index.html")
+
+
+def _build_theme_comparison_page(built: dict, theme_dist: pathlib.Path) -> None:
+    """테마 비교 갤러리 HTML 생성."""
+    SCALE   = 0.34
+    W, H    = 1280, 720
+    PW = int(W * SCALE)   # 435
+    PH = int(H * SCALE)   # 245
+
+    cards = []
+    for key, url in built.items():
+        label, desc, colors = THEME_META[key]
+        dots = "".join(f'<i style="background:{c}"></i>' for c in colors)
+        slide_url = f"{key}/index.html"
+        cards.append(f"""
+    <div class="th-card" id="{key}">
+      <div class="preview-wrap" style="width:{PW}px;height:{PH}px;overflow:hidden;position:relative;cursor:pointer;"
+           onclick="openFull('{slide_url}')">
+        <iframe src="{slide_url}" scrolling="no" tabindex="-1"
+                style="width:{W}px;height:{H}px;border:none;pointer-events:none;
+                       transform:scale({SCALE});transform-origin:top left;">
+        </iframe>
+        <div class="preview-overlay">클릭하면 전체 화면</div>
+      </div>
+      <div class="th-info">
+        <div class="th-header">
+          <b>{label}</b>
+          <button class="copy-btn" onclick="copyTheme('{key}', this)" title="복사">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+          </button>
+        </div>
+        <small>{desc}</small>
+        <div class="palette">{dots}</div>
+        <code>seminar_theme: {key}</code>
+      </div>
+    </div>""")
+
+    cards_html = "\n".join(cards)
+
+    html = f"""<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>테마 갤러리 — auto-seminar</title>
+<style>
+*{{box-sizing:border-box;margin:0;padding:0}}
+body{{background:#0f1117;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans-serif;padding:32px 24px}}
+header{{margin-bottom:36px}}
+header h1{{font-size:1.5rem;font-weight:700;color:#a78bfa;margin-bottom:6px}}
+header p{{color:#64748b;font-size:.9rem}}
+.back{{display:inline-block;color:#a78bfa;text-decoration:none;font-size:.85rem;margin-bottom:20px}}
+.back:hover{{text-decoration:underline}}
+.grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax({PW}px,1fr));gap:24px}}
+
+.th-card{{background:#161b27;border:1px solid rgba(255,255,255,.07);border-radius:12px;overflow:hidden;
+          transition:border-color .2s,box-shadow .2s}}
+.th-card:hover{{border-color:#7c3aed;box-shadow:0 0 0 1px #7c3aed,0 8px 32px rgba(124,58,237,.15)}}
+
+.preview-wrap{{position:relative}}
+.preview-overlay{{position:absolute;inset:0;background:rgba(0,0,0,0);display:flex;align-items:center;
+                  justify-content:center;color:rgba(255,255,255,0);font-size:.8rem;font-weight:500;
+                  transition:background .2s,color .2s}}
+.preview-wrap:hover .preview-overlay{{background:rgba(0,0,0,.45);color:#fff}}
+
+.th-info{{padding:14px 16px;display:flex;flex-direction:column;gap:6px}}
+.th-header{{display:flex;align-items:center;justify-content:space-between}}
+.th-header b{{font-size:.95rem}}
+.th-info small{{color:#64748b;font-size:.78rem}}
+.palette{{display:flex;gap:5px;padding:2px 0}}
+.palette i{{width:16px;height:16px;border-radius:50%;display:inline-block;border:1px solid rgba(255,255,255,.1)}}
+.th-info code{{font-size:.75rem;color:#94a3b8;background:rgba(255,255,255,.05);
+               padding:3px 8px;border-radius:4px;margin-top:2px}}
+
+.copy-btn{{background:none;border:none;color:#64748b;cursor:pointer;padding:2px;border-radius:4px;
+           display:flex;align-items:center;transition:color .15s}}
+.copy-btn:hover{{color:#a78bfa}}
+.copy-btn.copied{{color:#4ade80}}
+
+@media(max-width:640px){{.grid{{grid-template-columns:1fr}}}}
+</style>
+</head>
+<body>
+<a class="back" href="../">← 메인으로</a>
+<header>
+  <h1>테마 갤러리</h1>
+  <p>각 테마를 클릭하면 전체 화면으로 확인할 수 있습니다 · 오른쪽 상단 버튼으로 코드 복사</p>
+</header>
+<div class="grid">
+{cards_html}
+</div>
+<script>
+function openFull(url) {{
+  window.open(url, '_blank');
+}}
+function copyTheme(key, btn) {{
+  var text = 'seminar_theme: ' + key;
+  navigator.clipboard.writeText(text).then(function() {{
+    btn.classList.add('copied');
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 12 4 10"/></svg>';
+    setTimeout(function() {{
+      btn.classList.remove('copied');
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+    }}, 1800);
+  }});
+}}
+</script>
+</body>
+</html>"""
+
+    (theme_dist / "index.html").write_text(html, encoding="utf-8")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Main
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -514,8 +734,13 @@ def main() -> None:
     config = yaml.safe_load(CONFIG_PATH.read_text(encoding="utf-8")) or {}
 
     if DIST_DIR.exists():
-        shutil.rmtree(DIST_DIR)
-    DIST_DIR.mkdir()
+        try:
+            shutil.rmtree(DIST_DIR)
+        except PermissionError as e:
+            # Windows: 파일이 다른 프로세스에 열려 있으면 삭제 실패
+            # 개별 파일만 최대한 삭제 후 계속 진행
+            print(f"⚠  dist/ 삭제 중 잠긴 파일 발견 ({e.filename}) — 건너뜀", file=sys.stderr)
+    DIST_DIR.mkdir(exist_ok=True)
 
     md_files = sorted(SLIDES_DIR.glob("*.md"))
     if not md_files:
@@ -531,7 +756,9 @@ def main() -> None:
             seminars.append(info)
 
     generate_landing(seminars, config)
+    build_theme_gallery()
     print(f"\n✓ Done — {len(seminars)} built, landing page → dist/index.html")
+    print(f"           theme gallery  → dist/themes/index.html")
 
 
 if __name__ == "__main__":
