@@ -4,7 +4,6 @@
 > 대상: Claude Code를 개발 워크플로우에 통합하려는 개발자
 
 
----
 
 ## 목차
 
@@ -18,7 +17,6 @@
 8. [전략 가이드 — 언제 무엇을 써야 하나](#8-전략-가이드--언제-무엇을-써야-하나)
 9. [이 프로젝트 실제 구성](#9-이-프로젝트-실제-구성)
 
----
 
 ## 1. Claude Code 확장 생태계 전체 지도
 
@@ -55,7 +53,6 @@ Claude Code
 | **Plugin** | Skills + Hooks + 설정의 패키지 단위 | `~/.claude/plugins/` | 여러 프로젝트에서 재사용 |
 | **Workflow** | GitHub Actions와의 연동 | `.github/workflows/` | CI/CD 자동화 |
 
----
 
 ## 2. Skills (슬래시 커맨드)
 
@@ -134,7 +131,6 @@ user-invocable: true
 allowed-tools: Read, Edit, Bash, Grep, Glob
 context: fork
 agent: general-purpose
----
 
 ## Steps
 1. Run ruff check and auto-fix
@@ -157,7 +153,6 @@ agent: general-purpose
 | `/pr-comments` | GitHub PR 코멘트 가져오기 |
 | `/insights` | Claude Code 세션 분석 |
 
----
 
 ## 3. Sub-agents (서브에이전트)
 
@@ -229,7 +224,6 @@ context: fork
 각 결과를 종합해 보고서 작성
 ```
 
----
 
 ## 4. Hooks (이벤트 훅)
 
@@ -375,7 +369,6 @@ Claude Code가 도구를 실행할 때 **전후로 셸 커맨드를 자동 실�
 | non-zero (PreToolUse) | 도구 실행 **차단** |
 | non-zero (PostToolUse) | 경고 출력, 계속 진행 |
 
----
 
 ## 5. Plugins (플러그인 — 자체 제작 포함)
 
@@ -482,7 +475,6 @@ npm install -g @mycompany/claude-plugin
 | 팀 전체가 공통으로 써야 하는 규칙 | npm 패키지 플러그인으로 배포 |
 | 회사 전체 표준화 | Enterprise 관리형 플러그인 |
 
----
 
 ## 6. Workflows (GitHub Actions 연동)
 
@@ -573,7 +565,6 @@ jobs:
           prompt: "Run /fix-ci and commit the fixes"
 ```
 
----
 
 ## 7. 외부 Skills 가져오기 / 공유
 
@@ -635,7 +626,6 @@ cd ~/.claude/plugins/company-skills && git pull
 # dotfiles 설치 스크립트에서 ~/.claude/skills/ 심볼릭 링크
 ```
 
----
 
 ## 8. 전략 가이드 — 언제 무엇을 써야 하나
 
@@ -690,7 +680,6 @@ cd ~/.claude/plugins/company-skills && git pull
 └── ~/.claude/plugins/company-plugin/   사내 공통 Skills + Hooks 패키지화
 ```
 
----
 
 ## 9. 이 프로젝트 실제 구성
 
@@ -740,7 +729,6 @@ test-fail-triage-llm2/
 
 이 Hook을 추가하면 파일 수정 시마다 자동으로 ruff format이 적용됩니다.
 
----
 
 ## 부록: 빠른 참조
 
@@ -795,6 +783,3 @@ Input: $ARGUMENTS
   }
 }
 ```
-
-
-
