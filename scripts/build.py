@@ -2,10 +2,14 @@
 """
 auto-seminar build script
 
-slides/*.md  →  dist/*/index.html  (via Marp CLI)
-             →  dist/index.html    (landing page)
+slides/*.md  →  dist/*/index.html    (HTML 발표 슬라이드, via Marp CLI)
+             →  dist/*/*.pdf         (PDF 저장)
+             →  dist/*/*.pptx        (PowerPoint 저장)
+             →  dist/*/png/          (PNG 슬라이드 이미지)
+             →  dist/index.html      (랜딩 페이지)
 """
 
+import os
 import pathlib
 import re
 import shutil
@@ -15,10 +19,10 @@ import tempfile
 
 import yaml
 
-ROOT       = pathlib.Path(__file__).parent.parent
-SLIDES_DIR = ROOT / "slides"
-THEMES_DIR = ROOT / "themes"
-DIST_DIR   = ROOT / "dist"
+ROOT        = pathlib.Path(__file__).parent.parent
+SLIDES_DIR  = ROOT / "slides"
+THEMES_DIR  = ROOT / "themes"
+DIST_DIR    = ROOT / "dist"
 CONFIG_PATH = ROOT / "seminar.config.yml"
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -51,11 +55,9 @@ def first_title(body: str) -> str:
 
 
 def first_desc(body: str) -> str:
-    # Prefer blockquote (used as subtitle in seminar files)
     m = re.search(r"^>\s+(.+)$", body, re.MULTILINE)
     if m:
         return m.group(1).strip()
-    # Fall back to first non-header paragraph
     for block in re.split(r"\n{2,}", body.strip()):
         b = block.strip()
         if b and b[0] not in "#`-|>":
@@ -64,9 +66,117 @@ def first_desc(body: str) -> str:
 
 
 def slide_count(body: str) -> int:
-    # headingDivider:2 → each ## creates a slide; --- also divides
     h2 = len(re.findall(r"^##\s", body, re.MULTILINE))
     return max(h2, 1)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Export helpers
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _chrome_flags() -> list[str]:
+    """Chrome args + optional path for Marp CLI."""
+    flags = [
+        "--chrome-arg=--no-sandbox",
+        "--chrome-arg=--disable-setuid-sandbox",
+        "--chrome-arg=--disable-dev-shm-usage",
+    ]
+    chrome_path = (
+        os.environ.get("PUPPETEER_EXECUTABLE_PATH")
+        or os.environ.get("CHROME_PATH")
+    )
+    if chrome_path and pathlib.Path(chrome_path).exists():
+        flags = ["--chrome-path", chrome_path] + flags
+    return flags
+
+
+def _marp(args: list[str], label: str) -> bool:
+    """Run marp CLI. Returns True on success."""
+    r = subprocess.run(
+        ["npx", "--yes", "@marp-team/marp-cli"] + args,
+        capture_output=True, text=True,
+    )
+    if r.returncode != 0:
+        print(f"  ⚠  {label}:\n{r.stderr.strip()[:300]}", file=sys.stderr)
+        return False
+    return True
+
+
+def build_exports(tmp: pathlib.Path, stem: str, out_dir: pathlib.Path) -> dict:
+    """PDF / PPTX / PNG 내보내기. 성공한 형식만 반환."""
+    exports: dict = {}
+    chrome = _chrome_flags()
+    base   = [str(tmp), "--theme-set", str(THEMES_DIR), "--allow-local-files"]
+
+    # ── PDF ──────────────────────────────────────────────────────────────────
+    pdf_out = out_dir / f"{stem}.pdf"
+    if _marp(base + chrome + ["--pdf", "--output", str(pdf_out)], f"{stem} PDF"):
+        exports["pdf"] = f"./{stem}/{stem}.pdf"
+        print(f"  ✓  {stem}  →  dist/{stem}/{stem}.pdf")
+
+    # ── PPTX (Chromium 불필요) ────────────────────────────────────────────────
+    pptx_out = out_dir / f"{stem}.pptx"
+    pptx_base = [str(tmp), "--theme-set", str(THEMES_DIR)]
+    if _marp(pptx_base + ["--pptx", "--output", str(pptx_out)], f"{stem} PPTX"):
+        exports["pptx"] = f"./{stem}/{stem}.pptx"
+        print(f"  ✓  {stem}  →  dist/{stem}/{stem}.pptx")
+
+    # ── PNG ───────────────────────────────────────────────────────────────────
+    png_dir = out_dir / "png"
+    png_dir.mkdir(exist_ok=True)
+    png_prefix = png_dir / stem   # → stem.001.png, stem.002.png …
+    if _marp(base + chrome + ["--images", "png", "--output", str(png_prefix)], f"{stem} PNG"):
+        png_files = sorted(png_dir.glob(f"{stem}*.png"))
+        if png_files:
+            exports["png_count"] = len(png_files)
+            exports["png_dir"]   = f"./{stem}/png/"
+            _build_png_gallery(stem, png_files, png_dir)
+            print(f"  ✓  {stem}  →  dist/{stem}/png/ ({len(png_files)}장)")
+
+    return exports
+
+
+def _build_png_gallery(stem: str, png_files: list, png_dir: pathlib.Path) -> None:
+    """PNG 슬라이드 갤러리 HTML 생성."""
+    imgs = "\n".join(
+        f'    <figure>'
+        f'<a href="{f.name}" target="_blank"><img src="{f.name}" alt="Slide {i+1}" loading="lazy"></a>'
+        f'<figcaption>{i + 1}</figcaption></figure>'
+        for i, f in enumerate(png_files)
+    )
+    html = f"""<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{stem} – PNG 슬라이드</title>
+<style>
+*{{box-sizing:border-box;margin:0;padding:0}}
+body{{background:#0f1117;color:#e2e8f0;font-family:system-ui,sans-serif;padding:32px 16px}}
+header{{display:flex;align-items:center;gap:16px;margin-bottom:28px;flex-wrap:wrap}}
+header h1{{font-size:1.15rem;color:#a78bfa}}
+header small{{color:#64748b;font-size:.85rem}}
+.back{{color:#a78bfa;text-decoration:none;font-size:.88rem;white-space:nowrap}}
+.back:hover{{text-decoration:underline}}
+.grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}}
+figure{{background:#161b27;border:1px solid rgba(255,255,255,.07);border-radius:8px;overflow:hidden}}
+img{{width:100%;display:block;transition:opacity .15s}}
+img:hover{{opacity:.9}}
+figcaption{{text-align:center;padding:8px;color:#64748b;font-size:.75rem}}
+</style>
+</head>
+<body>
+<header>
+  <a class="back" href="../">← 돌아가기</a>
+  <h1>{stem}</h1>
+  <small>PNG 슬라이드 {len(png_files)}장 · 클릭하면 원본 크기로 열립니다</small>
+</header>
+<div class="grid">
+{imgs}
+</div>
+</body>
+</html>"""
+    (png_dir / "index.html").write_text(html, encoding="utf-8")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -83,18 +193,16 @@ def build_slide(md_path: pathlib.Path, config: dict) -> dict | None:
     seminar_title   = fm.pop("seminar_title", None) or first_title(body)
     seminar_visible = fm.pop("seminar_visible", True)
 
-    # Inject Marp fields (don't overwrite values user explicitly set)
     fm.setdefault("marp", True)
     fm["theme"] = seminar_theme
     fm.setdefault("headingDivider", 2)
     fm.setdefault("paginate", True)
 
-    content  = build_fm(fm, body)
-    out_dir  = DIST_DIR / stem
+    content = build_fm(fm, body)
+    out_dir = DIST_DIR / stem
     out_dir.mkdir(parents=True, exist_ok=True)
     out_html = out_dir / "index.html"
 
-    # Write temp file in slides/ so relative image paths resolve correctly
     with tempfile.NamedTemporaryFile(
         mode="w", encoding="utf-8", suffix=".md",
         dir=SLIDES_DIR, delete=False, prefix="_build_"
@@ -103,21 +211,21 @@ def build_slide(md_path: pathlib.Path, config: dict) -> dict | None:
         tmp = pathlib.Path(f.name)
 
     try:
-        cmd = [
-            "npx", "--yes", "@marp-team/marp-cli",
-            str(tmp),
-            "--html",
+        # ── HTML ─────────────────────────────────────────────────────────────
+        ok = _marp([
+            str(tmp), "--html",
             "--output", str(out_html),
             "--theme-set", str(THEMES_DIR),
-        ]
-        r = subprocess.run(cmd, capture_output=True, text=True)
-        if r.returncode != 0:
-            print(f"  ⚠  {stem}:\n{r.stderr.strip()}", file=sys.stderr)
+        ], stem)
+        if not ok:
             return None
+        print(f"  ✓  {stem}  →  dist/{stem}/index.html")
+
+        # ── PDF / PPTX / PNG ─────────────────────────────────────────────────
+        exports = build_exports(tmp, stem, out_dir)
     finally:
         tmp.unlink(missing_ok=True)
 
-    print(f"  ✓  {stem}  →  dist/{stem}/index.html")
     return {
         "stem":    stem,
         "title":   seminar_title,
@@ -126,6 +234,7 @@ def build_slide(md_path: pathlib.Path, config: dict) -> dict | None:
         "slides":  slide_count(body),
         "visible": seminar_visible,
         "url":     f"./{stem}/",
+        "exports": exports,
     }
 
 
@@ -149,16 +258,39 @@ THEME_META: dict[str, tuple[str, str, list[str]]] = {
 def _seminar_card(s: dict) -> str:
     label = THEME_META.get(s["theme"], (s["theme"],))[0]
     desc  = s["desc"] or ""
+    exp   = s.get("exports", {})
+
+    dl_parts = []
+    if "pdf" in exp:
+        dl_parts.append(
+            f'<a class="dl-btn dl-pdf" href="{exp["pdf"]}" download title="PDF 다운로드">PDF</a>'
+        )
+    if "pptx" in exp:
+        dl_parts.append(
+            f'<a class="dl-btn dl-pptx" href="{exp["pptx"]}" download title="PowerPoint 다운로드">PPTX</a>'
+        )
+    if "png_dir" in exp:
+        dl_parts.append(
+            f'<a class="dl-btn dl-png" href="{exp["png_dir"]}" title="PNG 슬라이드 갤러리">'
+            f'PNG <span class="dl-cnt">{exp["png_count"]}</span></a>'
+        )
+    dl_html = "\n              ".join(dl_parts)
+
     return f"""\
-        <a class="card" href="{s['url']}">
-          <span class="badge">{label}</span>
-          <h3>{s['title']}</h3>
-          <p>{desc}</p>
+        <div class="card">
+          <a class="card-body" href="{s['url']}">
+            <span class="badge">{label}</span>
+            <h3>{s['title']}</h3>
+            <p>{desc}</p>
+          </a>
           <div class="card-foot">
             <span class="n-slides">{s['slides']} slides</span>
-            <span class="go-btn">발표 시작 →</span>
+            <div class="card-actions">
+              <a class="go-btn" href="{s['url']}">발표 시작 →</a>
+              {dl_html}
+            </div>
           </div>
-        </a>"""
+        </div>"""
 
 
 def _theme_card(key: str) -> str:
@@ -198,6 +330,7 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; }
   text-transform: uppercase; letter-spacing: .12em; margin-bottom: 28px;
 }
 
+/* ── 세미나 카드 ─────────────────────────────────────────── */
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(272px, 1fr));
@@ -205,30 +338,57 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; }
 }
 .card {
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 24px;
-  text-decoration: none; color: var(--text);
-  display: flex; flex-direction: column; gap: 10px;
+  border-radius: var(--radius);
+  display: flex; flex-direction: column;
   transition: border-color .2s, box-shadow .2s;
 }
 .card:hover {
   border-color: var(--accent);
   box-shadow: 0 0 0 1px var(--accent), 0 8px 32px rgba(124,58,237,.15);
 }
+.card-body {
+  padding: 24px 24px 16px;
+  text-decoration: none; color: var(--text);
+  display: flex; flex-direction: column; gap: 10px; flex: 1;
+}
 .badge {
   display: inline-block; background: var(--accent-bg); color: #a78bfa;
   border: 1px solid rgba(124,58,237,.4); border-radius: 6px;
   font-size: .72rem; padding: 2px 9px; width: fit-content;
 }
-.card h3 { font-size: 1.05rem; font-weight: 600; line-height: 1.4; }
-.card p { color: var(--muted); font-size: .87rem; line-height: 1.6; flex: 1; }
+.card-body h3 { font-size: 1.05rem; font-weight: 600; line-height: 1.4; }
+.card-body p  { color: var(--muted); font-size: .87rem; line-height: 1.6; flex: 1; }
+
 .card-foot {
   display: flex; justify-content: space-between; align-items: center;
-  padding-top: 8px; border-top: 1px solid var(--border);
+  padding: 12px 24px; border-top: 1px solid var(--border);
+  flex-wrap: wrap; gap: 8px;
 }
 .n-slides { font-size: .78rem; color: var(--muted); }
-.go-btn { font-size: .82rem; color: #a78bfa; font-weight: 500; }
+.card-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+.go-btn {
+  font-size: .82rem; color: #a78bfa; font-weight: 500;
+  text-decoration: none; white-space: nowrap;
+}
+.go-btn:hover { text-decoration: underline; }
+
+/* 다운로드 버튼 */
+.dl-btn {
+  font-size: .7rem; font-weight: 600; text-decoration: none;
+  padding: 3px 9px; border-radius: 5px;
+  transition: opacity .15s; white-space: nowrap;
+}
+.dl-btn:hover { opacity: .75; }
+.dl-cnt { font-weight: 400; opacity: .8; }
+
+.dl-pdf  { background: rgba(239,68,68,.15);  color: #fca5a5; border: 1px solid rgba(239,68,68,.35); }
+.dl-pptx { background: rgba(249,115,22,.15); color: #fdba74; border: 1px solid rgba(249,115,22,.35); }
+.dl-png  { background: rgba(34,197,94,.15);  color: #86efac; border: 1px solid rgba(34,197,94,.35); }
+
 .empty { color: var(--muted); font-size: .9rem; }
 
+/* ── 테마 갤러리 ─────────────────────────────────────────── */
 .th-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -266,6 +426,7 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; }
 .th-gaia          { background: linear-gradient(135deg,#0288d1,#01579b); color: #ffffff; }
 .th-uncover       { background: #ffffff; color: #555555; }
 
+/* ── 공통 ────────────────────────────────────────────────── */
 .site-footer {
   padding: 28px 0; text-align: center;
   color: var(--muted); font-size: .8rem;
@@ -277,6 +438,7 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; }
   .site-header h1 { font-size: 1.5rem; }
   .card-grid { grid-template-columns: 1fr; }
   .th-grid { grid-template-columns: repeat(2, 1fr); }
+  .card-foot { flex-direction: column; align-items: flex-start; }
 }
 """
 

@@ -37,6 +37,16 @@ jobs:
       - name: Install Python dependencies
         run: pip install pyyaml
 
+      - name: Find Chrome executable
+        run: |
+          CHROME=$(which google-chrome-stable || which google-chrome || which chromium-browser || which chromium || true)
+          if [ -n "$CHROME" ]; then
+            echo "PUPPETEER_EXECUTABLE_PATH=$CHROME" >> $GITHUB_ENV
+            echo "Found Chrome: $CHROME"
+          else
+            echo "Chrome not found – PDF/PNG export will be skipped"
+          fi
+
       - name: Build slides
         run: python scripts/build.py
 
