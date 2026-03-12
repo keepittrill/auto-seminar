@@ -501,12 +501,54 @@ seminar_theme: ocean   # 이 파일만 ocean 테마
 파일의 seminar_theme  >  seminar.config.yml theme  >  Marp 기본 (default)
 ```
 
-### 4.3 테마 탐색
+### 4.3 테마 탐색 · 미리보기
 
-랜딩 페이지 하단 **테마 갤러리** 섹션에서 확인:
-- 각 테마 색상 미리보기
-- 5개 대표 팔레트 색상
-- `seminar_theme:` 값 복사
+#### 방법 1: 인터랙티브 테마 갤러리 (빌드 후)
+
+빌드 실행 후 `dist/themes/index.html`을 브라우저로 열면 실제 슬라이드로 렌더링된 9개 테마를 한눈에 비교할 수 있습니다.
+
+```bash
+# 로컬 빌드
+py -3 scripts/build.py
+
+# 결과 확인
+dist/themes/index.html   ← 인터랙티브 테마 갤러리
+```
+
+- 각 테마 미리보기 클릭 → 새 탭에서 전체 화면 확인
+- 오른쪽 상단 복사 버튼 → `seminar_theme: <키>` 클립보드 복사
+- GitHub Pages 배포 후: `https://<username>.github.io/auto-seminar/themes/`
+
+#### 방법 2: 로컬 실시간 미리보기 (watch mode)
+
+특정 테마를 바로 확인하고 싶을 때 Marp CLI watch 모드를 사용합니다.
+
+```bash
+# 기본 (seminar.config.yml 기본 테마 적용)
+npx @marp-team/marp-cli slides/my-talk.md --theme-set themes/ --watch --preview
+
+# 특정 테마 지정
+npx @marp-team/marp-cli slides/my-talk.md --theme-set themes/ --theme ocean --watch --preview
+
+# Windows (npx.cmd)
+npx.cmd @marp-team/marp-cli slides/my-talk.md --theme-set themes/ --theme catppuccin --watch --preview
+```
+
+MD 파일을 저장하면 브라우저가 자동으로 새로고침됩니다.
+
+#### 방법 3: 테마 빠른 전환 워크플로우
+
+1. `seminar_theme:` 값을 변경 → 저장
+2. watch mode가 실행 중이면 즉시 반영
+3. 마음에 드는 테마 확인 후 push
+
+```markdown
+---
+seminar_theme: catppuccin   ← 여기 값만 바꾸면 됨
+---
+```
+
+**테마 ID 목록**: `catppuccin` · `gradient-dark` · `minimal-white` · `tech-dark` · `ocean` · `corporate` · `default` · `gaia` · `uncover`
 
 ### 4.4 커스텀 테마 추가
 
@@ -599,6 +641,21 @@ section::after {
 
 > ℹ️ **참고**: `themes/` 디렉터리에 CSS를 추가하는 것만으로 자동 인식됩니다. `build.py`나 config 수정이 필요 없습니다.
 
+#### 테마 추가 후 lint 스크립트 업데이트 (선택)
+
+`scripts/lint_slides.py`의 `VALID_THEMES` 목록에 새 테마 ID를 추가하면 `/lint-slides` 점검 시 "잘못된 테마" 경고가 발생하지 않습니다.
+
+```python
+# scripts/lint_slides.py
+VALID_THEMES = {
+    "catppuccin", "gradient-dark", "minimal-white", "tech-dark",
+    "ocean", "corporate", "default", "gaia", "uncover",
+    "my-theme",   # ← 추가
+}
+```
+
+추가 가능한 테마 수는 **제한이 없습니다**. CSS 파일 하나 = 테마 하나입니다.
+
 ---
 
 ## 5. 내보내기 (PDF / PPTX / PNG)
@@ -686,8 +743,26 @@ Building 3 slide(s)…
 
 #### PPTX
 
-- PowerPoint, Keynote, Google Slides에서 편집 가능
-- 테마 스타일 일부가 변환 과정에서 달라질 수 있음 (복잡한 CSS 그라디언트 등)
+> ⚠️ **중요**: Marp가 생성하는 PPTX는 **수정 불가**입니다.
+
+Marp PPTX 내보내기의 동작 방식:
+
+- 각 슬라이드를 **이미지(EMF/벡터)로 래스터화**하여 PPTX 슬라이드에 삽입
+- PowerPoint에서 열어도 텍스트 박스, 도형이 네이티브 객체가 아닌 **단일 이미지**로 표시됨
+- 따라서 PowerPoint에서 텍스트 수정, 도형 이동, 글꼴 변경 **불가**
+
+| 가능한 작업 | 불가능한 작업 |
+|------------|--------------|
+| 슬라이드 순서 변경 | 텍스트 편집 |
+| 슬라이드 삭제/추가 | 도형/레이아웃 수정 |
+| 발표자 노트 추가 | 글꼴·색상 변경 |
+| 배경 색상 변경 | 애니메이션 추가 |
+
+**편집이 필요한 경우**: 원본 `.md` 파일을 수정 → 재빌드하는 것이 올바른 워크플로우입니다.
+
+**PPTX가 유용한 경우**:
+- 배포용 파일 (수신자가 PowerPoint로 열람만 하는 경우)
+- 슬라이드를 이미지로 추출하여 다른 PPT에 삽입
 - Chromium 불필요 — 모든 환경에서 안정적으로 생성
 - 오프라인 편집 및 사내 배포에 적합
 
@@ -1377,6 +1452,19 @@ Chrome이 없으면 PDF/PNG는 생성되지 않지만 HTML과 PPTX는 항상 생
 ---
 
 ## 10. FAQ
+
+**Q: 다운로드한 PPTX 파일을 PowerPoint에서 수정할 수 있나요?**
+
+아니요. Marp가 생성하는 PPTX는 각 슬라이드를 **이미지로 래스터화**하여 삽입합니다. PowerPoint에서 열면 슬라이드가 하나의 그림으로 표시되므로 텍스트 편집, 도형 이동, 글꼴 변경이 불가능합니다.
+
+| 목적 | 권장 방법 |
+|------|-----------|
+| 내용 수정 | 원본 `.md` 파일 수정 → 재빌드 |
+| 배포/열람 | PPTX 또는 PDF 다운로드 |
+| 이미지로 활용 | PNG 갤러리에서 개별 슬라이드 이미지 다운로드 |
+| 다른 PPT에 삽입 | PNG를 이미지로 복사·붙여넣기 |
+
+---
 
 **Q: GitHub Pages URL이 왜 `/<repo>/` 형식인가요?**
 
