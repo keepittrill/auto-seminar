@@ -238,7 +238,7 @@ def _build_switcher_html(active_theme: str, active_layout: str = "default") -> s
   </div>
 </div>
 <style>
-section pre{{max-height:52vh;overflow-y:auto}}
+section pre{{max-height:65vh;overflow-y:auto}}
 section.as-section-cover{{display:flex!important;flex-direction:column;
   align-items:center!important;justify-content:center!important;text-align:center}}
 section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover h3{{

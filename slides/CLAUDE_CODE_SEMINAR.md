@@ -1,5 +1,5 @@
 ---
-headingDivider: [2, 3]
+headingDivider: [2, 3, 4]
 seminar_layout: dense
 ---
 
