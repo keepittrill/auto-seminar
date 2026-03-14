@@ -1,8 +1,8 @@
 # Software Requirements Specification
 
 **프로젝트**: auto-seminar
-**버전**: 1.1.0
-**작성일**: 2026-03-13
+**버전**: 1.2.0
+**작성일**: 2026-03-14
 **상태**: Approved
 **작성자**: 플랫폼팀
 
@@ -39,7 +39,9 @@ auto-seminar는 마크다운(MD) 파일을 GitHub Pages 기반 웹 슬라이드�
 | 시스템 | 범위 | 버전 |
 |--------|------|------|
 | **auto-seminar core** | MD → HTML 변환, 테마 시스템, 랜딩 페이지 생성, GitHub Pages 배포 | 1.1.0 |
-| **export 시스템** | PDF, PPTX, PNG 자동 생성 및 다운로드 버튼 제공 | 1.1.0 (신규) |
+| **export 시스템** | PDF, PPTX, PNG 자동 생성 및 다운로드 버튼 제공 | 1.1.0 |
+| **테마 스위처** | 발표 HTML 내 런타임 테마 즉시 전환 UI | 1.2.0 (신규) |
+| **create-theme** | 색상·레이아웃·폰트 파라미터 → Marp CSS 테마 자동 생성 | 1.2.0 (신규) |
 | **visualize plugin** | 자연어 → 단일 HTML 시각화 생성 (Claude Code 확장, 선택적) | 0.4.0 (외부) |
 
 **범위 외:**
@@ -60,6 +62,10 @@ auto-seminar는 마크다운(MD) 파일을 GitHub Pages 기반 웹 슬라이드�
 | **stem** | 파일명에서 확장자를 제거한 부분 (`my-talk.md` → `my-talk`) |
 | **Chromium** | PDF 및 PNG 렌더링에 사용되는 헤드리스 브라우저 |
 | **Graceful fallback** | 일부 기능 실패 시 전체를 중단하지 않고 나머지를 정상 진행하는 처리 방식 |
+| **테마 스위처** | 발표 HTML에 주입된 플로팅 UI. 빌드 후 런타임에 CSS 교체로 테마를 즉시 전환 |
+| **레이아웃 프리셋** | 슬라이드 밀도에 따른 font-size·padding 조합: `default` / `dense` / `wiki` |
+| **override 레이어** | `media="none"` 상태로 embed된 테마 CSS. 활성화 시 Marp 내장 CSS를 cascade로 덮어씀 |
+| **create-theme skill** | Claude Code Skill. 이미지 분석 또는 색상 파라미터로 `themes/<name>.css`를 자동 생성 |
 
 ### 1.4 참고 문서
 
@@ -351,6 +357,99 @@ auto-seminar는 마크다운(MD) 파일을 GitHub Pages 기반 웹 슬라이드�
 
 - **설명**: `themes/` 디렉터리에 CSS 파일 추가만으로 새 테마 사용 가능
 - **조건**: 첫 줄 `/* @theme <name> */` 형식, `section { width: 1280px; height: 720px; }` 포함
+- **우선순위**: Medium
+
+#### FR-19: 런타임 테마 스위처 (v1.2 신규)
+
+- **설명**: 빌드된 HTML 슬라이드에 플로팅 테마 전환 UI를 주입. 발표 중 페이지 리로드 없이 즉시 테마 전환
+- **처리**: `build.py` 후처리(`_inject_theme_switcher()`)로 `dist/<stem>/index.html` 생성 후 수정
+- **동작 원리**:
+  - `themes/*.css` 전체를 `<style data-theme="x" media="none">` 으로 `</head>` 직전 embed
+  - Marp 내장 CSS 이후에 위치 → CSS cascade로 덮어쓰기 가능
+  - JS: `styleEl.media = ""` / `"none"` 토글로 테마 활성화/비활성화
+  - `localStorage("as-theme")`으로 선택 유지
+- **UI 구성**:
+  - 우하단 고정 🎨 버튼 (클릭 시 패널 펼침/접힘)
+  - 테마 버튼: 컬러 스와치 4점 + 테마 이름
+  - "📋 이 테마 사용하기" → `seminar_theme: <name>` 클립보드 복사
+- **우선순위**: High
+- **수용 기준**:
+  - 모든 커스텀 테마 즉시 전환 가능 (gradient-dark 배경 포함)
+  - ESC로 패널 닫힘, Marp 키보드 내비게이션과 충돌 없음
+  - localStorage에 저장된 테마가 다음 방문 시 자동 복원됨
+  - 외부 CDN 의존성 없음 (HTML에 완전히 embed)
+
+#### FR-20: 테마 자동 생성 스크립트 (v1.2 신규)
+
+- **설명**: `scripts/create_theme.py` — 색상·레이아웃·폰트 파라미터로 `themes/<name>.css` 자동 생성
+- **입력 파라미터**:
+
+| 파라미터 | 필수 | 기본값 | 설명 |
+|---------|------|--------|------|
+| `name` | 필수 | — | 테마 이름 (파일명: `themes/<name>.css`) |
+| `--bg` | 권장 | `#1e1e2e` | 배경색 hex |
+| `--text` | 권장 | `#cdd6f4` | 본문 텍스트색 hex |
+| `--accent` | 권장 | `#cba6f7` | 주 강조색 / h1 hex |
+| `--accent2` | 선택 | 자동 파생 | h2 색 hex |
+| `--accent3` | 선택 | 자동 파생 | h3 색 hex |
+| `--surface` | 선택 | 자동 파생 | 코드블록·표헤더 배경 hex |
+| `--muted` | 선택 | 자동 파생 | 흐린 텍스트·페이지번호 hex |
+| `--font` | 선택 | `sans` | `sans` / `mono` / `serif` |
+| `--layout` | 선택 | `default` | `default` / `dense` / `wiki` |
+| `--output` | 선택 | `themes/<name>.css` | 출력 경로 |
+
+- **색상 자동 파생 규칙**:
+  - `accent2` = accent와 text 65:35 혼합
+  - `accent3` = accent2와 text 60:40 혼합
+  - `surface` = bg에서 12% 밝게 (다크) 또는 6% 어둡게 (라이트)
+  - `muted` = text와 bg 45:55 혼합
+- **우선순위**: High
+- **수용 기준**:
+  - 생성된 CSS 첫 줄이 `/* @theme <name> */` 형식
+  - `section { width: 1280px; height: 720px; }` 포함
+  - 빌드 즉시 `seminar_theme: <name>` 으로 사용 가능
+  - `--list` 옵션으로 `themes/*.css` 목록 출력
+
+#### FR-21: 레이아웃 프리셋 (v1.2 신규)
+
+- **설명**: 슬라이드 내용 밀도에 따른 3가지 레이아웃 프리셋 제공
+
+| 레이아웃 | font-size | padding | 적합한 용도 |
+|----------|-----------|---------|------------|
+| `default` | 32px | 60px 80px | 일반 발표 |
+| `dense` | 24px | 40px 56px | 표·코드·목록이 많은 기술 발표 |
+| `wiki` | 20px | 36px 52px | 문서·참고자료·위키 스타일 |
+
+- `wiki` 레이아웃은 h1/h2에 하단 구분선, 표에 전체 테두리 추가
+- **우선순위**: High
+
+#### FR-22: 폰트 프리셋 (v1.2 신규)
+
+- **설명**: 3가지 폰트 패밀리 프리셋 제공
+
+| 프리셋 | 주 폰트 | 적합한 용도 |
+|--------|---------|------------|
+| `sans` | Noto Sans CJK KR, Malgun Gothic | 한국어 발표 일반 (기본) |
+| `mono` | JetBrains Mono, D2Coding, Fira Code | 개발자·코드 위주 발표 |
+| `serif` | Noto Serif CJK KR, Batang | 학술·논문·격식 발표 |
+
+- **우선순위**: Medium
+
+#### FR-23: create-theme Claude Code Skill (v1.2 신규)
+
+- **설명**: `.claude/skills/create-theme/SKILL.md` — Claude Code에서 `/create-theme` 명령으로 호출
+- **입력 시나리오**:
+  - 이미지 파일 경로 → Claude가 시각적으로 색상 분석 → `create_theme.py` 호출
+  - 색상값 직접 지정 → `create_theme.py` 직접 호출
+  - 자연어 설명 → Claude가 색상 추론 → `create_theme.py` 호출
+- **우선순위**: Medium
+
+#### FR-24: lint 동적 테마 감지 (v1.2 신규)
+
+- **설명**: `scripts/lint_slides.py`의 유효 테마 목록을 `themes/*.css` 동적 스캔으로 자동 구성
+- **이전**: `VALID_THEMES` 하드코딩 set (신규 테마 추가 시 수동 수정 필요)
+- **변경 후**: `{p.stem for p in (ROOT / "themes").glob("*.css")} | {"default", "gaia", "uncover"}`
+- **효과**: `create_theme.py`로 테마 생성 시 lint 스크립트 수정 불필요
 - **우선순위**: Medium
 
 ---
@@ -650,3 +749,4 @@ THEME_META: dict[str, tuple[str, str, list[str]]] = {
 |------|------|----------|
 | 1.0.0 | 2026-03-12 | 초기 작성 (HTML 빌드, 테마, 랜딩 페이지, GitHub Pages 배포) |
 | 1.1.0 | 2026-03-13 | export 시스템 추가 (FR-09~FR-12), 카드 구조 변경, Chrome 탐지 로직 추가, 오류 처리 섹션 신규 |
+| 1.2.0 | 2026-03-14 | 테마 스위처 (FR-19), 테마 자동 생성 스크립트 (FR-20), 레이아웃 프리셋 (FR-21), 폰트 프리셋 (FR-22), create-theme Skill (FR-23), lint 동적 감지 (FR-24) 추가 |

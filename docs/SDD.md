@@ -1,8 +1,8 @@
 # Software Design Document
 
 **프로젝트**: auto-seminar
-**버전**: 1.1.0
-**작성일**: 2026-03-13
+**버전**: 1.2.0
+**작성일**: 2026-03-14
 **작성자**: 플랫폼팀
 
 ---
@@ -30,15 +30,22 @@ auto-seminar/
 ├── slides/                      ← 입력: 사용자 MD 파일 (*.md)
 ├── themes/                      ← 입력: Marp 테마 CSS (*.css)
 ├── scripts/
-│   └── build.py                 ← 핵심 빌드 스크립트 (단일 진입점)
+│   ├── build.py                 ← 핵심 빌드 스크립트 (단일 진입점)
+│   ├── create_theme.py          ← 테마 자동 생성 스크립트 (v1.2 신규)
+│   └── lint_slides.py           ← MD 구조 검사 스크립트
+├── .claude/
+│   └── skills/
+│       ├── lint-slides/SKILL.md ← /lint-slides Claude Code Skill
+│       └── create-theme/SKILL.md← /create-theme Claude Code Skill (v1.2 신규)
 ├── seminar.config.yml           ← 전역 설정
 ├── .github/
 │   └── workflows/
 │       └── deploy.yml           ← CI/CD 파이프라인
 └── dist/                        ← 출력 (gitignore)
     ├── index.html
+    ├── themes/index.html
     └── <stem>/
-        ├── index.html
+        ├── index.html           ← 테마 스위처 포함 (v1.2)
         ├── <stem>.pdf
         ├── <stem>.pptx
         └── png/
@@ -64,7 +71,13 @@ auto-seminar/
   ←── [themes/*.css]                                         [themes/*.css]
       │                                                         │
       ▼                                                         ▼
-  dist/<stem>/index.html                               dist/<stem>/<stem>.pptx
+  dist/<stem>/index.html (raw)                         dist/<stem>/<stem>.pptx
+      │
+      ▼  build.py: _inject_theme_switcher()  ← v1.2 신규 후처리
+      │  ├── themes/*.css → <style data-theme="x" media="none"> embed
+      │  └── 플로팅 테마 스위처 UI + JS 주입
+      │
+  dist/<stem>/index.html (최종)
       │
       ├─────────────────────────────────────────────────────────┐
       │  (Chrome 있는 경우만)                                    │  (Chrome 있는 경우만)
@@ -97,6 +110,11 @@ auto-seminar/
 | export graceful fallback | 실패 시 빌드 중단 | HTML은 항상 보장; export는 부가 기능 |
 | `div.card` + `a.card-body` 구조 | `a.card` 단일 링크 | HTML 표준: `<a>` 내 `<a>` 중첩 금지 |
 | Chrome path 환경변수 방식 | `--chrome-path` 하드코딩 | CI/로컬/다양한 OS에서 유연하게 동작 |
+| 테마 스위처: CSS cascade override | 테마별 pre-build (9× 빌드) | 빌드 1회; 단일 HTML 파일; 완전한 테마 전환 |
+| 테마 스위처: `media="none"` 비활성화 | `disabled` 속성 | 크로스 브라우저 안정성; JS `.media` 속성으로 토글 |
+| Marp 내장 CSS 무수정 방식 | `/* @theme */` 주석 탐색 후 id 마킹 | Marp minify로 주석 삭제됨; cascade가 더 단순·안정적 |
+| `create_theme.py`: 색상 파생 자동화 | 사용자가 모든 색상 지정 | 최소 3색(bg/text/accent)으로 완전한 테마 생성 가능 |
+| 동적 VALID_THEMES 스캔 | 하드코딩 set | 테마 추가 시 lint 스크립트 수정 불필요 |
 
 ---
 
@@ -119,9 +137,12 @@ build.py
 ├── build_exports(tmp, stem, out_dir) → dict     PDF/PPTX/PNG 내보내기
 ├── _build_png_gallery(stem, png_files, png_dir) → None  PNG 갤러리 HTML 생성
 │
+├── _build_switcher_html(active_theme) → str     ← v1.2 신규: 테마 스위처 HTML/CSS/JS
+├── _inject_theme_switcher(html_path, active_theme) → None  ← v1.2 신규: HTML 후처리
+│
 ├── build_slide(md_path, config) → dict | None   단일 슬라이드 전체 빌드
 │
-├── THEME_META                 상수              테마 메타데이터
+├── THEME_META                 상수              테마 메타데이터 (이름, 설명, 색상 팔레트)
 ├── _seminar_card(s)           → str             랜딩 카드 HTML 생성
 ├── _theme_card(key)           → str             테마 갤러리 카드 HTML
 ├── _LANDING_CSS               상수              랜딩 페이지 CSS
@@ -142,6 +163,8 @@ main()
   │     ├── first_desc()
   │     ├── slide_count()
   │     ├── _marp()                     [HTML 빌드]
+  │     ├── _inject_theme_switcher()    [HTML 후처리 — v1.2 신규]
+  │     │     └── _build_switcher_html()
   │     └── build_exports()
   │           ├── _chrome_flags()
   │           ├── _marp()              [PDF]
@@ -532,6 +555,133 @@ Marp CLI가 `themes/` 내 모든 CSS 파일을 자동으로 로드하므로,
 
 단, `THEME_META`에 등록하지 않으면 랜딩 페이지 **테마 갤러리에 표시되지 않습니다**.
 
+### 6.5 `create_theme.py` 설계 (v1.2 신규)
+
+색상 파라미터로 완전한 Marp CSS 테마를 자동 생성하는 독립 스크립트.
+
+#### 색상 파생 알고리즘
+
+```python
+def derive_colors(bg, text, accent, ...):
+    # accent2: accent와 text를 65:35 혼합 (채도 낮춤)
+    accent2  = blend(accent, text, ratio=0.65)
+    # accent3: accent2와 text를 60:40 혼합
+    accent3  = blend(accent2, text, ratio=0.60)
+    # surface: bg가 어두우면 밝게, 밝으면 어둡게
+    surface  = lighten(bg, 0.12) if is_dark(bg) else darken(bg, 0.06)
+    # surface2: bg보다 약간 더 어둡게 (코드블록 배경)
+    surface2 = darken(bg, 0.06) if is_dark(bg) else darken(bg, 0.10)
+    # muted: text와 bg 사이 45:55 (흐린 텍스트)
+    muted    = blend(text, bg, ratio=0.45)
+```
+
+모든 색상 연산은 hex 파싱 → RGB 선형 보간 → hex 변환으로 외부 라이브러리 없이 구현.
+
+#### 레이아웃 프리셋 구조
+
+```python
+LAYOUTS = {
+    "default": { "font_size": "32px", "padding": "60px 80px",
+                 "h1_size": "1.6em", "h2_size": "1.3em", ... },
+    "dense":   { "font_size": "24px", "padding": "40px 56px",
+                 "h1_size": "1.4em", "h2_size": "1.2em", ... },
+    "wiki":    { "font_size": "20px", "padding": "36px 52px",
+                 "h1_size": "1.3em", "h2_size": "1.15em",
+                 "wiki_h1_border": True,   # h1 하단 구분선
+                 "wiki_h2_border": True,   # h2 하단 구분선 (연하게)
+                 "wiki_table_border": True # 표 전체 테두리 },
+}
+```
+
+#### CSS 생성 방식
+
+`generate_css()` 함수가 Python f-string 템플릿으로 완전한 CSS 문자열 반환.
+파일 쓰기: `output_path.write_text(css, encoding="utf-8")`.
+
+#### lint 동적 감지 연동
+
+```python
+# scripts/lint_slides.py (v1.2 변경)
+VALID_THEMES = (
+    {p.stem for p in (ROOT / "themes").glob("*.css")}  # 동적 스캔
+    | {"default", "gaia", "uncover"}                    # Marp 내장 3종
+)
+```
+
+`create_theme.py`로 생성한 테마는 lint 검사에서 자동으로 유효한 테마로 인정됨.
+
+### 6.6 테마 스위처 후처리 설계 (v1.2 신규)
+
+#### 설계 제약
+
+Marp CLI는 HTML 출력 시 CSS를 **minify**합니다. 이 과정에서 `/* @theme name */` 주석이 제거되어 어느 `<style>` 태그가 테마 CSS인지 정규식으로 식별할 수 없습니다.
+
+#### 해결: CSS cascade override 방식
+
+```
+Marp 내장 CSS (위치: <head> 초반)   → 기본 렌더링 담당
+override 레이어 (위치: </head> 직전) → media="" 활성화 시 cascade로 덮어씀
+```
+
+HTML에서 나중에 등장하는 CSS가 같은 specificity에서 우선합니다. override 레이어는 항상 Marp 내장 CSS보다 뒤에 위치하므로 활성화 시 완전히 덮어씁니다.
+
+#### `_inject_theme_switcher()` 구현
+
+```python
+def _inject_theme_switcher(html_path, active_theme):
+    html = html_path.read_text(encoding="utf-8")
+
+    # 1. 모든 테마를 override 레이어로 embed (초기: media="none", 비활성)
+    overrides = []
+    for css_file in sorted(THEMES_DIR.glob("*.css")):
+        css = css_file.read_text(encoding="utf-8")
+        overrides.append(
+            f'<style data-theme="{css_file.stem}" media="none">\n{css}\n</style>'
+        )
+    html = html.replace("</head>", "\n".join(overrides) + "\n</head>", 1)
+
+    # 2. 스위처 UI + JS 주입 (</body> 직전)
+    html = html.replace("</body>", _build_switcher_html(active_theme) + "\n</body>", 1)
+
+    html_path.write_text(html, encoding="utf-8")
+```
+
+#### `_build_switcher_html()` 출력 구조
+
+```html
+<div id="ts-root">
+  <button id="ts-btn">🎨</button>
+  <div id="ts-panel" hidden>
+    <div id="ts-grid">  ← JS로 동적 생성 (THEME_META 기반)
+    <button id="ts-copy-btn">📋 이 테마 사용하기</button>
+  </div>
+</div>
+<style>/* 스위처 CSS — position:fixed, backdrop-filter, dark 테마 */</style>
+<script>
+(function() {
+  const THEMES = { catppuccin: { label: "...", colors: [...] }, ... };
+  const INIT_THEME = 'catppuccin';  // 빌드 시 결정된 활성 테마
+  let overrideEl = null;            // 현재 활성 override <style> 요소
+
+  function applyTheme(name) {
+    // 이전 override 비활성화 → Marp 내장 CSS 복원
+    if (overrideEl) { overrideEl.media = 'none'; overrideEl = null; }
+    // INIT_THEME이면 override 불필요 (Marp 내장 CSS가 담당)
+    if (name !== INIT_THEME) {
+      const el = document.querySelector(`style[data-theme="${name}"]`);
+      el.media = ''; overrideEl = el;  // cascade로 Marp CSS 덮어씀
+    }
+    localStorage.setItem('as-theme', name);
+  }
+})();
+</script>
+```
+
+#### HTML 파일 크기 증가
+
+테마 CSS 1개 ≈ 3KB × 6개 커스텀 테마 ≈ +18KB.
+현대 브라우저 환경에서 무시할 수준이며, 정적 서빙이므로 캐시됩니다.
+
 ---
 
 ## 7. 랜딩 페이지 설계
@@ -794,3 +944,14 @@ if r.returncode != 0:
 | `dist/` 생성 실패 | 非0 (PermissionError 등) |
 
 GitHub Actions는 Non-0 종료 코드 시 Step 실패로 처리하여 Pages 배포가 실행되지 않습니다.
+
+
+---
+
+## 10. 변경 이력
+
+| 버전 | 날짜 | 변경 내용 |
+|------|------|----------|
+| 1.0.0 | 2026-03-12 | 초기 작성 (HTML 빌드, 테마 시스템, 랜딩 페이지, GitHub Pages 배포) |
+| 1.1.0 | 2026-03-13 | 내보내기 시스템 설계 추가 (섹션 5), 카드 구조 변경 (7.2), Chrome 탐지 설계, 오류 처리 섹션 신규 |
+| 1.2.0 | 2026-03-14 | 디렉터리 구조 갱신 (1.1), 데이터 흐름에 후처리 단계 추가 (1.2), 설계 결정 5건 추가 (1.3), 함수 목록 갱신 (2.1), 테마 스위처 설계 (6.6), create_theme.py 설계 (6.5), lint 동적 감지 (6.5) |
