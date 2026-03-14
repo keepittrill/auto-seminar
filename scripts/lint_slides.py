@@ -12,12 +12,13 @@ import re, sys, pathlib
 if sys.platform == "win32":
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-VALID_THEMES = {
-    "catppuccin", "gradient-dark", "minimal-white", "tech-dark",
-    "ocean", "corporate", "default", "gaia", "uncover"
-}
-
 ROOT       = pathlib.Path(__file__).parent.parent
+
+# themes/*.css 에서 동적으로 발견 + Marp 기본 3개
+VALID_THEMES = (
+    {p.stem for p in (ROOT / "themes").glob("*.css")}
+    | {"default", "gaia", "uncover"}
+)
 FIX_MODE   = "--fix" in sys.argv
 file_args  = [a for a in sys.argv[1:] if not a.startswith("--")]
 

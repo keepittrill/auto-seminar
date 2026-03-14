@@ -9,6 +9,7 @@ slides/*.md  →  dist/*/index.html    (HTML 발표 슬라이드, via Marp CLI)
              →  dist/index.html      (랜딩 페이지)
 """
 
+import json
 import os
 import pathlib
 import re
@@ -192,6 +193,159 @@ figcaption{{text-align:center;padding:8px;color:#64748b;font-size:.75rem}}
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Theme switcher (post-processing)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _build_switcher_html(active_theme: str) -> str:
+    """테마 스위처 플로팅 UI HTML + CSS + JS 문자열 반환."""
+    themes_js = json.dumps(
+        {k: {"label": v[0], "colors": v[2]} for k, v in THEME_META.items()},
+        ensure_ascii=False,
+    )
+    return f"""<!-- auto-seminar theme switcher -->
+<div id="ts-root">
+  <button id="ts-btn" title="테마 변경" aria-label="테마 변경">
+    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+      <path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67
+               1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99
+               0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5
+               0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67
+               9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33
+               8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83
+               0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8
+               14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67
+               1.5 1.5-.67 1.5-1.5 1.5z"/>
+    </svg>
+  </button>
+  <div id="ts-panel" hidden>
+    <div id="ts-header">🎨 테마 선택</div>
+    <div id="ts-grid"></div>
+    <button id="ts-copy-btn">📋 이 테마 사용하기</button>
+  </div>
+</div>
+<style>
+#ts-root{{position:fixed;bottom:20px;right:20px;z-index:9999;
+          font-family:system-ui,-apple-system,sans-serif;font-size:13px}}
+#ts-btn{{width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.22);
+         background:rgba(10,10,20,.75);color:#fff;cursor:pointer;display:flex;
+         align-items:center;justify-content:center;
+         backdrop-filter:blur(10px);transition:background .2s;padding:0}}
+#ts-btn:hover{{background:rgba(30,30,60,.9)}}
+#ts-panel{{position:absolute;bottom:54px;right:0;width:260px;
+           background:rgba(12,14,24,.96);border:1px solid rgba(255,255,255,.13);
+           border-radius:14px;padding:14px 12px 12px;
+           backdrop-filter:blur(20px);box-shadow:0 8px 32px rgba(0,0,0,.5)}}
+#ts-header{{color:rgba(255,255,255,.55);font-size:.75rem;font-weight:600;
+            letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;
+            padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.08)}}
+#ts-grid{{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}}
+.ts-item{{display:flex;align-items:center;gap:7px;padding:7px 9px;
+          border-radius:8px;border:1px solid transparent;cursor:pointer;
+          background:rgba(255,255,255,.04);transition:all .15s;color:#ddd}}
+.ts-item:hover{{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.15)}}
+.ts-item.ts-active{{background:rgba(120,100,220,.25);
+                    border-color:rgba(150,130,255,.5);color:#fff}}
+.ts-dots{{display:flex;gap:3px;flex-shrink:0}}
+.ts-dot{{width:9px;height:9px;border-radius:50%;flex-shrink:0}}
+.ts-label{{font-size:.75rem;font-weight:500;overflow:hidden;
+           text-overflow:ellipsis;white-space:nowrap}}
+#ts-copy-btn{{width:100%;padding:8px;border-radius:8px;border:none;
+              background:rgba(120,100,220,.3);color:#c4b5fd;cursor:pointer;
+              font-size:.78rem;transition:background .2s}}
+#ts-copy-btn:hover{{background:rgba(120,100,220,.5)}}
+#ts-copy-btn.ts-copied{{background:rgba(60,180,100,.3);color:#86efac}}
+</style>
+<script>
+(function(){{
+  const THEMES = {themes_js};
+  const INIT_THEME = '{active_theme}';  // Marp 내장 CSS의 테마 (변경 불가)
+  let current = INIT_THEME;
+  let overrideEl = null;  // 현재 활성화된 override <style> 요소
+
+  function applyTheme(name) {{
+    if (name === current) return;
+    // 이전 override 비활성화 (Marp 내장 CSS 복원)
+    if (overrideEl) {{ overrideEl.media = 'none'; overrideEl = null; }}
+    if (name !== INIT_THEME) {{
+      // 새 테마 override 활성화 (Marp 내장 CSS 이후 위치 → cascade로 덮어씀)
+      const el = document.querySelector('style[data-theme="' + name + '"]');
+      if (!el) return;
+      el.media = ''; overrideEl = el;
+    }}
+    current = name;
+    localStorage.setItem('as-theme', name);
+    renderButtons();
+  }}
+
+  function renderButtons() {{
+    const grid = document.getElementById('ts-grid');
+    grid.innerHTML = '';
+    Object.entries(THEMES).forEach(([key, t]) => {{
+      const el = document.createElement('div');
+      el.className = 'ts-item' + (key === current ? ' ts-active' : '');
+      const dots = t.colors.slice(0,4).map(c =>
+        '<span class="ts-dot" style="background:' + c + '"></span>'
+      ).join('');
+      el.innerHTML = '<span class="ts-dots">' + dots + '</span>'
+                   + '<span class="ts-label">' + t.label + '</span>';
+      el.onclick = () => applyTheme(key);
+      grid.appendChild(el);
+    }});
+  }}
+
+  // 패널 토글
+  const btn = document.getElementById('ts-btn');
+  const panel = document.getElementById('ts-panel');
+  btn.onclick = (e) => {{ e.stopPropagation(); panel.hidden = !panel.hidden; if (!panel.hidden) renderButtons(); }};
+  document.addEventListener('click', () => {{ panel.hidden = true; }});
+  panel.addEventListener('click', e => e.stopPropagation());
+
+  // 복사 버튼
+  document.getElementById('ts-copy-btn').onclick = function() {{
+    navigator.clipboard.writeText('seminar_theme: ' + current).then(() => {{
+      this.textContent = '✓ 복사됨!'; this.classList.add('ts-copied');
+      setTimeout(() => {{ this.textContent = '📋 이 테마 사용하기'; this.classList.remove('ts-copied'); }}, 2000);
+    }});
+  }};
+
+  // ESC로 닫기 (Marp 키보드 내비게이션 방해 안 함 — panel 닫힌 상태에선 전파)
+  document.addEventListener('keydown', e => {{ if (e.key === 'Escape' && !panel.hidden) {{ panel.hidden = true; e.stopPropagation(); }} }});
+
+  // localStorage 복원
+  const saved = localStorage.getItem('as-theme');
+  if (saved && THEMES[saved]) applyTheme(saved);
+}})();
+</script>"""
+
+
+def _inject_theme_switcher(html_path: pathlib.Path, active_theme: str) -> None:
+    """Marp 생성 HTML에 테마 스위처 UI를 후처리로 주입.
+
+    전략: Marp이 내장 CSS를 minify하면서 /* @theme */ 주석을 삭제하므로
+    내장 스타일 태그를 직접 찾지 않는다.
+    대신 모든 테마 CSS를 media="none" (비활성) 상태로 </head> 직전에 추가한다.
+    CSS cascade 순서 상 이 스타일들은 Marp 내장 CSS 이후에 위치하므로,
+    media=""로 활성화하면 Marp 내장 CSS를 덮어쓴다.
+    원래 테마로 복귀할 때는 override를 비활성화하면 Marp 내장 CSS가 복원된다.
+    """
+    html = html_path.read_text(encoding="utf-8")
+
+    # 1. themes/*.css 전체를 override 레이어로 embed (초기에는 모두 비활성)
+    override_styles = []
+    for css_file in sorted(THEMES_DIR.glob("*.css")):
+        css = css_file.read_text(encoding="utf-8")
+        override_styles.append(
+            f'<style data-theme="{css_file.stem}" media="none">\n{css}\n</style>'
+        )
+    html = html.replace("</head>", "\n".join(override_styles) + "\n</head>", 1)
+
+    # 2. 스위처 UI 주입 (</body> 직전)
+    html = html.replace("</body>", _build_switcher_html(active_theme) + "\n</body>", 1)
+
+    html_path.write_text(html, encoding="utf-8")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Build individual slide file
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -231,6 +385,7 @@ def build_slide(md_path: pathlib.Path, config: dict) -> dict | None:
         ], stem)
         if not ok:
             return None
+        _inject_theme_switcher(out_html, seminar_theme)
         print(f"  ✓  {stem}  →  dist/{stem}/index.html")
 
         # ── PDF / PPTX / PNG ─────────────────────────────────────────────────

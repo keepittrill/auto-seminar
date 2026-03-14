@@ -13,7 +13,7 @@
 1. [빠른 시작 (5분)](#1-빠른-시작-5분)
 2. [슬라이드 작성 완전 가이드](#2-슬라이드-작성-완전-가이드)
 3. [Frontmatter 레퍼런스](#3-frontmatter-레퍼런스)
-4. [테마 가이드](#4-테마-가이드)
+4. [테마 가이드](#4-테마-가이드) · [4.5 자동 생성](#45-이미지색상으로-테마-자동-생성-create-theme)
 5. [내보내기 (PDF / PPTX / PNG)](#5-내보내기-pdf--pptx--png)
 6. [로컬 개발](#6-로컬-개발)
 7. [고급 설정](#7-고급-설정)
@@ -655,6 +655,117 @@ VALID_THEMES = {
 ```
 
 추가 가능한 테마 수는 **제한이 없습니다**. CSS 파일 하나 = 테마 하나입니다.
+
+> ℹ️ **자동 감지**: `scripts/lint_slides.py`가 `themes/*.css` 파일을 동적으로 읽으므로, 새 테마를 추가해도 VALID_THEMES를 수동으로 수정할 필요가 없습니다.
+
+### 4.5 이미지·색상으로 테마 자동 생성 (`/create-theme`)
+
+Claude Code가 설치되어 있으면 이미지나 색상값 한 줄로 테마를 자동 생성할 수 있습니다.
+
+#### 이미지에서 테마 추출
+
+스크린샷, 브랜드 가이드, 기존 PPT 이미지를 제공하면 색상을 분석해 테마를 생성합니다.
+
+```
+/create-theme my-brand path/to/brand-guide.png
+```
+
+#### 색상 직접 지정
+
+```bash
+py -3 scripts/create_theme.py my-theme \
+  --bg "#1a1a2e" \
+  --text "#e0e0e0" \
+  --accent "#e94560" \
+  --layout dense \
+  --font sans
+```
+
+#### 자연어로 요청 (Claude Code 사용 시)
+
+```
+어두운 보라색 계열 테마 만들어줘, 내용이 많이 들어가는 슬라이드용으로
+```
+
+Claude가 색상을 추론해 `--layout dense`로 자동 생성합니다.
+
+---
+
+#### 레이아웃 옵션 (`--layout`)
+
+슬라이드에 들어가는 내용 밀도에 따라 선택합니다.
+
+| 레이아웃 | 기본 폰트 | 패딩 | 특징 | 적합한 경우 |
+|----------|----------|------|------|------------|
+| `default` | 32px | 60px 80px | 표준 여백, 큰 제목 | 일반 발표, 키노트 스타일 |
+| `dense`   | 24px | 40px 56px | 간격 최소화, 컴팩트 | 표·코드·목록 많은 기술 발표 |
+| `wiki`    | 20px | 36px 52px | 문서 스타일, h1/h2 구분선 | 참고자료, 백과사전, 매뉴얼 |
+
+```bash
+# dense: 한 슬라이드에 10+ 항목이 들어가야 할 때
+py -3 scripts/create_theme.py tech-dense --bg "#0d1117" --text "#e6edf3" --accent "#58a6ff" --layout dense
+
+# wiki: 문서처럼 읽히는 자료
+py -3 scripts/create_theme.py docs-light --bg "#ffffff" --text "#37352f" --accent "#0f7b6c" --layout wiki --font sans
+```
+
+#### 폰트 옵션 (`--font`)
+
+| 폰트 | 적합한 경우 |
+|------|------------|
+| `sans`  | 한국어 발표 전반 (기본, Noto Sans KR) |
+| `mono`  | 개발자 발표, 코드 리뷰, 터미널 스타일 |
+| `serif` | 학술 발표, 논문, 격식 있는 문서 |
+
+#### 색상 파라미터 전체 목록
+
+| 옵션 | 설명 | 미지정 시 |
+|------|------|----------|
+| `--bg` | 배경색 | `#1e1e2e` |
+| `--text` | 본문 텍스트색 | `#cdd6f4` |
+| `--accent` | 주 강조색 (h1) | `#cba6f7` |
+| `--accent2` | h2 제목색 | accent에서 자동 파생 |
+| `--accent3` | h3 제목색 | accent2에서 자동 파생 |
+| `--surface` | 코드블록·표헤더 배경 | bg에서 자동 파생 |
+| `--surface2` | 코드블록 배경 | bg에서 자동 파생 |
+| `--muted` | 흐린 텍스트·페이지번호 | text에서 자동 파생 |
+
+```bash
+# 최소 입력 (나머지 자동)
+py -3 scripts/create_theme.py simple-dark --bg "#1a1a1a" --text "#f0f0f0" --accent "#ff6b6b"
+
+# 전체 지정
+py -3 scripts/create_theme.py full-custom \
+  --bg "#0f0f23" --text "#cccccc" --accent "#ffff66" \
+  --accent2 "#9999ff" --accent3 "#ff9966" \
+  --surface "#1a1a2e" --muted "#555577" \
+  --font mono --layout dense
+```
+
+#### 생성 후 워크플로우
+
+```bash
+# 1. 테마 생성
+py -3 scripts/create_theme.py my-theme --bg "#..." --text "#..." --accent "#..."
+
+# 2. 빌드해서 갤러리 확인
+py -3 scripts/build.py
+# → dist/themes/index.html 에서 미리보기
+
+# 3. 슬라이드에 적용
+#    slides/my-talk.md frontmatter에:
+#    seminar_theme: my-theme
+
+# 4. lint 검사 (새 테마 자동 인식됨)
+py -3 scripts/lint_slides.py
+```
+
+#### 도움말
+
+```bash
+py -3 scripts/create_theme.py --help    # 전체 옵션
+py -3 scripts/create_theme.py --list    # themes/ 내 테마 목록
+```
 
 ---
 
