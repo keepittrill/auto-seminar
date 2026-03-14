@@ -1,3 +1,8 @@
+---
+headingDivider: [2, 3]
+seminar_layout: dense
+---
+
 # Claude Code 확장 전략 - 기술 세미나
 
 > Skills / Sub-agents / Hooks / Plugins / Workflows 완전 가이드

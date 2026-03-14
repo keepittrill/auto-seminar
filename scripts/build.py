@@ -196,15 +196,15 @@ figcaption{{text-align:center;padding:8px;color:#64748b;font-size:.75rem}}
 # Theme switcher (post-processing)
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _build_switcher_html(active_theme: str) -> str:
-    """테마 스위처 플로팅 UI HTML + CSS + JS 문자열 반환."""
+def _build_switcher_html(active_theme: str, active_layout: str = "default") -> str:
+    """테마+레이아웃 스위처 플로팅 UI HTML + CSS + JS 문자열 반환."""
     themes_js = json.dumps(
         {k: {"label": v[0], "colors": v[2]} for k, v in THEME_META.items()},
         ensure_ascii=False,
     )
     return f"""<!-- auto-seminar theme switcher -->
 <div id="ts-root">
-  <button id="ts-btn" title="테마 변경" aria-label="테마 변경">
+  <button id="ts-btn" title="테마·레이아웃 변경" aria-label="테마·레이아웃 변경">
     <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
       <path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67
                1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99
@@ -218,9 +218,11 @@ def _build_switcher_html(active_theme: str) -> str:
     </svg>
   </button>
   <div id="ts-panel" hidden>
-    <div id="ts-header">🎨 테마 선택</div>
+    <div class="ts-sec-hdr">🎨 테마 선택</div>
     <div id="ts-grid"></div>
-    <button id="ts-copy-btn">📋 이 테마 사용하기</button>
+    <div class="ts-sec-hdr" style="margin-top:8px">📐 레이아웃</div>
+    <div id="ts-layout-grid"></div>
+    <button id="ts-copy-btn">📋 이 설정 복사</button>
   </div>
 </div>
 <style>
@@ -235,9 +237,9 @@ def _build_switcher_html(active_theme: str) -> str:
            background:rgba(12,14,24,.96);border:1px solid rgba(255,255,255,.13);
            border-radius:14px;padding:14px 12px 12px;
            backdrop-filter:blur(20px);box-shadow:0 8px 32px rgba(0,0,0,.5)}}
-#ts-header{{color:rgba(255,255,255,.55);font-size:.75rem;font-weight:600;
-            letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;
-            padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.08)}}
+.ts-sec-hdr{{color:rgba(255,255,255,.55);font-size:.75rem;font-weight:600;
+             letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px;
+             padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.08)}}
 #ts-grid{{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}}
 .ts-item{{display:flex;align-items:center;gap:7px;padding:7px 9px;
           border-radius:8px;border:1px solid transparent;cursor:pointer;
@@ -249,6 +251,15 @@ def _build_switcher_html(active_theme: str) -> str:
 .ts-dot{{width:9px;height:9px;border-radius:50%;flex-shrink:0}}
 .ts-label{{font-size:.75rem;font-weight:500;overflow:hidden;
            text-overflow:ellipsis;white-space:nowrap}}
+#ts-layout-grid{{display:flex;gap:6px;margin-bottom:10px}}
+.ts-ly{{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+        padding:7px 4px;border-radius:8px;border:1px solid transparent;cursor:pointer;
+        background:rgba(255,255,255,.04);transition:all .15s;color:#ddd}}
+.ts-ly:hover{{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.15)}}
+.ts-ly.ts-active{{background:rgba(120,100,220,.25);border-color:rgba(150,130,255,.5);color:#fff}}
+.ts-ly-name{{font-size:.75rem;font-weight:600}}
+.ts-ly-desc{{font-size:.65rem;color:rgba(255,255,255,.4)}}
+.ts-ly.ts-active .ts-ly-desc{{color:rgba(200,180,255,.7)}}
 #ts-copy-btn{{width:100%;padding:8px;border-radius:8px;border:none;
               background:rgba(120,100,220,.3);color:#c4b5fd;cursor:pointer;
               font-size:.78rem;transition:background .2s}}
@@ -258,26 +269,41 @@ def _build_switcher_html(active_theme: str) -> str:
 <script>
 (function(){{
   const THEMES = {themes_js};
-  const INIT_THEME = '{active_theme}';  // Marp 내장 CSS의 테마 (변경 불가)
-  let current = INIT_THEME;
-  let overrideEl = null;  // 현재 활성화된 override <style> 요소
+  const LAYOUTS = {{
+    'default': {{label:'기본',  desc:'32px', css:''}},
+    'dense':   {{label:'Dense', desc:'24px', css:'section{{font-size:24px!important}}section h1{{font-size:56px!important}}section h2{{font-size:40px!important}}section h3{{font-size:32px!important}}'}},
+    'wiki':    {{label:'Wiki',  desc:'20px', css:'section{{font-size:20px!important}}section h1{{font-size:52px!important}}section h2{{font-size:36px!important}}section h3{{font-size:28px!important}}'}},
+  }};
+  const INIT_THEME  = '{active_theme}';
+  const INIT_LAYOUT = '{active_layout}';
+  let current       = INIT_THEME;
+  let currentLayout = INIT_LAYOUT;
+  let overrideEl    = null;
 
   function applyTheme(name) {{
     if (name === current) return;
-    // 이전 override 비활성화 (Marp 내장 CSS 복원)
     if (overrideEl) {{ overrideEl.media = 'none'; overrideEl = null; }}
     if (name !== INIT_THEME) {{
-      // 새 테마 override 활성화 (Marp 내장 CSS 이후 위치 → cascade로 덮어씀)
       const el = document.querySelector('style[data-theme="' + name + '"]');
       if (!el) return;
       el.media = ''; overrideEl = el;
     }}
     current = name;
     localStorage.setItem('as-theme', name);
-    renderButtons();
+    renderThemeButtons();
   }}
 
-  function renderButtons() {{
+  function applyLayout(name) {{
+    if (name === currentLayout) return;
+    let el = document.getElementById('as-layout-css');
+    if (!el) {{ el = document.createElement('style'); el.id = 'as-layout-css'; document.head.appendChild(el); }}
+    el.textContent = LAYOUTS[name] ? LAYOUTS[name].css : '';
+    currentLayout = name;
+    localStorage.setItem('as-layout', name);
+    renderLayoutButtons();
+  }}
+
+  function renderThemeButtons() {{
     const grid = document.getElementById('ts-grid');
     grid.innerHTML = '';
     Object.entries(THEMES).forEach(([key, t]) => {{
@@ -293,33 +319,52 @@ def _build_switcher_html(active_theme: str) -> str:
     }});
   }}
 
-  // 패널 토글
-  const btn = document.getElementById('ts-btn');
+  function renderLayoutButtons() {{
+    const grid = document.getElementById('ts-layout-grid');
+    grid.innerHTML = '';
+    Object.entries(LAYOUTS).forEach(([key, l]) => {{
+      const el = document.createElement('div');
+      el.className = 'ts-ly' + (key === currentLayout ? ' ts-active' : '');
+      el.innerHTML = '<span class="ts-ly-name">' + l.label + '</span>'
+                   + '<span class="ts-ly-desc">' + l.desc + '</span>';
+      el.onclick = () => applyLayout(key);
+      grid.appendChild(el);
+    }});
+  }}
+
+  const btn   = document.getElementById('ts-btn');
   const panel = document.getElementById('ts-panel');
-  btn.onclick = (e) => {{ e.stopPropagation(); panel.hidden = !panel.hidden; if (!panel.hidden) renderButtons(); }};
+  btn.onclick = (e) => {{
+    e.stopPropagation();
+    panel.hidden = !panel.hidden;
+    if (!panel.hidden) {{ renderThemeButtons(); renderLayoutButtons(); }}
+  }};
   document.addEventListener('click', () => {{ panel.hidden = true; }});
   panel.addEventListener('click', e => e.stopPropagation());
 
-  // 복사 버튼
   document.getElementById('ts-copy-btn').onclick = function() {{
-    navigator.clipboard.writeText('seminar_theme: ' + current).then(() => {{
+    let text = 'seminar_theme: ' + current;
+    if (currentLayout !== 'default') text += '\\nseminar_layout: ' + currentLayout;
+    navigator.clipboard.writeText(text).then(() => {{
       this.textContent = '✓ 복사됨!'; this.classList.add('ts-copied');
-      setTimeout(() => {{ this.textContent = '📋 이 테마 사용하기'; this.classList.remove('ts-copied'); }}, 2000);
+      setTimeout(() => {{ this.textContent = '📋 이 설정 복사'; this.classList.remove('ts-copied'); }}, 2000);
     }});
   }};
 
-  // ESC로 닫기 (Marp 키보드 내비게이션 방해 안 함 — panel 닫힌 상태에선 전파)
-  document.addEventListener('keydown', e => {{ if (e.key === 'Escape' && !panel.hidden) {{ panel.hidden = true; e.stopPropagation(); }} }});
+  document.addEventListener('keydown', e => {{
+    if (e.key === 'Escape' && !panel.hidden) {{ panel.hidden = true; e.stopPropagation(); }}
+  }});
 
-  // localStorage 복원
   const saved = localStorage.getItem('as-theme');
   if (saved && THEMES[saved]) applyTheme(saved);
+  const savedLayout = localStorage.getItem('as-layout');
+  if (savedLayout && LAYOUTS[savedLayout]) applyLayout(savedLayout);
 }})();
 </script>"""
 
 
-def _inject_theme_switcher(html_path: pathlib.Path, active_theme: str) -> None:
-    """Marp 생성 HTML에 테마 스위처 UI를 후처리로 주입.
+def _inject_theme_switcher(html_path: pathlib.Path, active_theme: str, active_layout: str = "default") -> None:
+    """Marp 생성 HTML에 테마+레이아웃 스위처 UI를 후처리로 주입.
 
     전략: Marp이 내장 CSS를 minify하면서 /* @theme */ 주석을 삭제하므로
     내장 스타일 태그를 직접 찾지 않는다.
@@ -330,7 +375,17 @@ def _inject_theme_switcher(html_path: pathlib.Path, active_theme: str) -> None:
     """
     html = html_path.read_text(encoding="utf-8")
 
-    # 1. themes/*.css 전체를 override 레이어로 embed (초기에는 모두 비활성)
+    # 1. 초기 레이아웃 CSS 주입 (default가 아닐 때만)
+    if active_layout != "default":
+        layout_css = LAYOUT_CSS.get(active_layout, "")
+        if layout_css:
+            html = html.replace(
+                "</head>",
+                f'<style id="as-layout-css">{layout_css}</style>\n</head>',
+                1,
+            )
+
+    # 2. themes/*.css 전체를 override 레이어로 embed (초기에는 모두 비활성)
     override_styles = []
     for css_file in sorted(THEMES_DIR.glob("*.css")):
         css = css_file.read_text(encoding="utf-8")
@@ -339,8 +394,8 @@ def _inject_theme_switcher(html_path: pathlib.Path, active_theme: str) -> None:
         )
     html = html.replace("</head>", "\n".join(override_styles) + "\n</head>", 1)
 
-    # 2. 스위처 UI 주입 (</body> 직전)
-    html = html.replace("</body>", _build_switcher_html(active_theme) + "\n</body>", 1)
+    # 3. 스위처 UI 주입 (</body> 직전)
+    html = html.replace("</body>", _build_switcher_html(active_theme, active_layout) + "\n</body>", 1)
 
     html_path.write_text(html, encoding="utf-8")
 
@@ -358,6 +413,7 @@ def build_slide(md_path: pathlib.Path, config: dict) -> dict | None:
     seminar_theme   = fm.pop("seminar_theme", None) or default_theme
     seminar_title   = fm.pop("seminar_title", None) or first_title(body)
     seminar_visible = fm.pop("seminar_visible", True)
+    seminar_layout  = fm.pop("seminar_layout", "default")
 
     fm.setdefault("marp", True)
     fm["theme"] = seminar_theme
@@ -385,7 +441,7 @@ def build_slide(md_path: pathlib.Path, config: dict) -> dict | None:
         ], stem)
         if not ok:
             return None
-        _inject_theme_switcher(out_html, seminar_theme)
+        _inject_theme_switcher(out_html, seminar_theme, seminar_layout)
         print(f"  ✓  {stem}  →  dist/{stem}/index.html")
 
         # ── PDF / PPTX / PNG ─────────────────────────────────────────────────
@@ -408,6 +464,11 @@ def build_slide(md_path: pathlib.Path, config: dict) -> dict | None:
 # ─────────────────────────────────────────────────────────────────────────────
 # Landing page
 # ─────────────────────────────────────────────────────────────────────────────
+
+LAYOUT_CSS: dict[str, str] = {
+    "dense": "section{font-size:24px!important}section h1{font-size:56px!important}section h2{font-size:40px!important}section h3{font-size:32px!important}",
+    "wiki":  "section{font-size:20px!important}section h1{font-size:52px!important}section h2{font-size:36px!important}section h3{font-size:28px!important}",
+}
 
 THEME_META: dict[str, tuple[str, str, list[str]]] = {
     "catppuccin":    ("Catppuccin",    "파스텔 다크 · Mocha",  ["#1e1e2e", "#cba6f7", "#89b4fa", "#a6e3a1", "#f38ba8"]),
