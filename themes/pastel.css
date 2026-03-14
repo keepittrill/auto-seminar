@@ -1,0 +1,195 @@
+/* @theme pastel */
+
+/*
+ * Pastel — Soft Light Pastel
+ * Airy lavender-white canvas with rich purple, indigo, and pink accents.
+ * Clean and approachable; ideal for educational or creative presentations.
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+
+section {
+  background-color: #fef6ff;
+  color: #3d2b50;
+  font-family: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+  font-size: 18px;
+  padding: 60px 80px;
+  line-height: 1.6;
+}
+
+/* Headings */
+section h1 {
+  color: #9333ea;
+  font-size: 2.4em;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: 28px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #e9d5ff;
+}
+
+section h2 {
+  color: #6366f1;
+  font-size: 1.8em;
+  font-weight: 700;
+  border-bottom: 2px solid #e9d5ff;
+  padding-bottom: 6px;
+  margin-bottom: 20px;
+}
+
+section h3 {
+  color: #ec4899;
+  font-size: 1.3em;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+
+section h4 {
+  color: #d946a8;
+  font-size: 1.1em;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+section h5 {
+  color: #c43395;
+  font-size: 1em;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+section h6 {
+  color: #b02282;
+  font-size: 0.9em;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+/* Paragraph */
+section p {
+  line-height: 1.7;
+  margin-bottom: 14px;
+}
+
+/* Lists */
+section ul,
+section ol {
+  padding-left: 26px;
+}
+
+section li {
+  margin-bottom: 7px;
+}
+
+section li::marker {
+  color: #c084fc;
+}
+
+/* Inline code */
+section code {
+  background: #fce7f3;
+  color: #9d174d;
+  border: 1px solid #fbcfe8;
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+/* Code block */
+section pre {
+  background: #f5f3ff;
+  border: 1px solid #e9d5ff;
+  border-radius: 8px;
+  padding: 18px 20px;
+  overflow: auto;
+  margin-bottom: 18px;
+  box-shadow: 0 1px 4px rgba(147, 51, 234, 0.06);
+}
+
+section pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.85em;
+  color: #3d2b50;
+}
+
+/* Blockquote */
+section blockquote {
+  border-left: 4px solid #c084fc;
+  background: rgba(192, 132, 252, 0.07);
+  padding: 12px 18px;
+  margin: 18px 0;
+  border-radius: 0 8px 8px 0;
+  color: #6d28d9;
+  font-style: italic;
+}
+
+/* Table */
+section table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 18px;
+}
+
+section th {
+  background: #f3e8ff;
+  color: #7c3aed;
+  padding: 8px 14px;
+  font-weight: 700;
+  text-align: left;
+  border: 1px solid #ddd6fe;
+}
+
+section td {
+  padding: 8px 14px;
+  border: 1px solid #ede9fe;
+  color: #4c1d95;
+}
+
+section tr:nth-child(even) td {
+  background: rgba(237, 233, 254, 0.5);
+}
+
+/* Strong / Em */
+section strong {
+  color: #7c3aed;
+  font-weight: 700;
+}
+
+section em {
+  color: #db2777;
+  font-style: italic;
+}
+
+/* Link */
+section a {
+  color: #7c3aed;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+section a:hover {
+  color: #6366f1;
+}
+
+/* Horizontal rule */
+section hr {
+  border: none;
+  border-top: 2px solid #e9d5ff;
+  margin: 24px 0;
+}
+
+/* Marp header/footer */
+section header,
+section footer {
+  color: #c4b5d8;
+  font-size: 0.75em;
+}
+
+/* Page number */
+section::after {
+  color: #c4b5d8;
+  font-size: 0.75em;
+}

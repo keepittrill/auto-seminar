@@ -1,0 +1,219 @@
+/* @theme retro */
+
+/*
+ * Retro — CRT Terminal Green
+ * Classic phosphor-green terminal aesthetic with scanline overlay.
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap');
+
+section {
+  background-color: #050e05;
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.18) 0px,
+    rgba(0, 0, 0, 0.18) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  color: #00e838;
+  font-family: 'Courier New', 'Courier Prime', monospace;
+  font-size: 18px;
+  padding: 60px 80px;
+  line-height: 1.6;
+}
+
+/* Headings */
+section h1 {
+  color: #00ff41;
+  font-size: 2.4em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-shadow:
+    0 0 6px rgba(0, 255, 65, 0.8),
+    0 0 18px rgba(0, 255, 65, 0.4),
+    0 0 40px rgba(0, 255, 65, 0.15);
+  border-bottom: 1px solid rgba(0, 255, 65, 0.4);
+  padding-bottom: 12px;
+  margin-bottom: 28px;
+}
+
+section h2 {
+  color: #00e838;
+  font-size: 1.8em;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  border-left: 4px solid #00ff41;
+  padding-left: 14px;
+  margin-bottom: 20px;
+  text-shadow: 0 0 8px rgba(0, 255, 65, 0.4);
+}
+
+section h3 {
+  color: #00c830;
+  font-size: 1.3em;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin-bottom: 14px;
+}
+
+section h4 {
+  color: #00b028;
+  font-size: 1.1em;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+section h5 {
+  color: #009820;
+  font-size: 1em;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+section h6 {
+  color: #008018;
+  font-size: 0.9em;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+/* Paragraph */
+section p {
+  line-height: 1.7;
+  margin-bottom: 14px;
+}
+
+/* Lists */
+section ul,
+section ol {
+  padding-left: 26px;
+}
+
+section li {
+  margin-bottom: 7px;
+}
+
+section li::marker {
+  color: #00ff41;
+}
+
+/* Inline code */
+section code {
+  background: rgba(0, 255, 65, 0.08);
+  color: #7fffb0;
+  border: 1px solid rgba(0, 255, 65, 0.3);
+  border-radius: 3px;
+  padding: 1px 6px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.92em;
+}
+
+/* Code block */
+section pre {
+  background: #020c02;
+  border: 1px solid rgba(0, 255, 65, 0.35);
+  border-radius: 4px;
+  padding: 18px 20px;
+  overflow: auto;
+  box-shadow:
+    0 0 8px rgba(0, 255, 65, 0.1),
+    inset 0 0 16px rgba(0, 0, 0, 0.5);
+  margin-bottom: 18px;
+}
+
+section pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.85em;
+  color: #7fffb0;
+  text-shadow: 0 0 4px rgba(0, 255, 65, 0.3);
+}
+
+/* Blockquote */
+section blockquote {
+  border-left: 4px solid #00ff41;
+  background: rgba(0, 255, 65, 0.05);
+  padding: 12px 18px;
+  margin: 18px 0;
+  border-radius: 0 4px 4px 0;
+  color: #00d830;
+  font-style: italic;
+}
+
+/* Table */
+section table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 18px;
+}
+
+section th {
+  background: rgba(0, 255, 65, 0.12);
+  color: #00ff41;
+  padding: 8px 14px;
+  font-weight: 700;
+  text-align: left;
+  border: 1px solid rgba(0, 255, 65, 0.25);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.9em;
+}
+
+section td {
+  padding: 8px 14px;
+  border: 1px solid rgba(0, 255, 65, 0.15);
+  color: #00e838;
+}
+
+section tr:nth-child(even) td {
+  background: rgba(0, 255, 65, 0.04);
+}
+
+/* Strong / Em */
+section strong {
+  color: #7fffb0;
+  font-weight: 700;
+}
+
+section em {
+  color: #00e838;
+  font-style: italic;
+  text-shadow: 0 0 6px rgba(0, 255, 65, 0.25);
+}
+
+/* Link */
+section a {
+  color: #7fffb0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+section a:hover {
+  color: #00ff41;
+  text-shadow: 0 0 6px rgba(0, 255, 65, 0.5);
+}
+
+/* Horizontal rule */
+section hr {
+  border: none;
+  border-top: 1px solid rgba(0, 255, 65, 0.3);
+  margin: 24px 0;
+}
+
+/* Marp header/footer */
+section header,
+section footer {
+  color: rgba(0, 255, 65, 0.5);
+  font-size: 0.75em;
+  font-family: 'Courier New', monospace;
+}
+
+/* Page number */
+section::after {
+  color: rgba(0, 255, 65, 0.5);
+  font-family: 'Courier New', monospace;
+  font-size: 0.75em;
+}

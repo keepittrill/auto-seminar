@@ -1,0 +1,198 @@
+/* @theme sunset */
+
+/*
+ * Sunset — Warm Purple / Orange Gradient
+ * Deep violet night sky bleeding into warm coral and rose.
+ * Evokes the last light of a summer sunset.
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap');
+
+section {
+  background: linear-gradient(150deg, #1a0533 0%, #2d1b4e 50%, #3d1535 100%);
+  color: #fde8d8;
+  font-family: 'Outfit', 'Segoe UI', system-ui, sans-serif;
+  font-size: 18px;
+  padding: 60px 80px;
+  line-height: 1.6;
+}
+
+/* Headings */
+section h1 {
+  color: #ff9a56;
+  font-size: 2.4em;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: 28px;
+  padding-bottom: 12px;
+  text-shadow:
+    0 0 10px rgba(255, 154, 86, 0.5),
+    0 0 28px rgba(255, 154, 86, 0.2);
+  border-bottom: 1px solid rgba(255, 154, 86, 0.3);
+}
+
+section h2 {
+  color: #c084fc;
+  font-size: 1.8em;
+  font-weight: 700;
+  border-left: 4px solid #ff9a56;
+  padding-left: 14px;
+  margin-bottom: 20px;
+}
+
+section h3 {
+  color: #f9a8d4;
+  font-size: 1.3em;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+section h4 {
+  color: #e895be;
+  font-size: 1.1em;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+section h5 {
+  color: #d582a8;
+  font-size: 1em;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+section h6 {
+  color: #c07095;
+  font-size: 0.9em;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+/* Paragraph */
+section p {
+  line-height: 1.7;
+  margin-bottom: 14px;
+}
+
+/* Lists */
+section ul,
+section ol {
+  padding-left: 26px;
+}
+
+section li {
+  margin-bottom: 7px;
+}
+
+section li::marker {
+  color: #c084fc;
+}
+
+/* Inline code */
+section code {
+  background: rgba(255, 154, 86, 0.1);
+  color: #ffcba0;
+  border: 1px solid rgba(255, 154, 86, 0.25);
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+/* Code block */
+section pre {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 154, 86, 0.2);
+  border-radius: 6px;
+  padding: 18px 20px;
+  overflow: auto;
+  margin-bottom: 18px;
+  box-shadow: inset 0 1px 6px rgba(0, 0, 0, 0.4);
+}
+
+section pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.85em;
+  color: #fde8d8;
+}
+
+/* Blockquote */
+section blockquote {
+  border-left: 4px solid #ff9a56;
+  background: rgba(255, 154, 86, 0.06);
+  padding: 12px 18px;
+  margin: 18px 0;
+  border-radius: 0 6px 6px 0;
+  color: #ffd5b5;
+  font-style: italic;
+}
+
+/* Table */
+section table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 18px;
+}
+
+section th {
+  background: rgba(255, 154, 86, 0.15);
+  color: #ff9a56;
+  padding: 8px 14px;
+  font-weight: 700;
+  text-align: left;
+  border: 1px solid rgba(255, 154, 86, 0.25);
+}
+
+section td {
+  padding: 8px 14px;
+  border: 1px solid rgba(255, 154, 86, 0.12);
+  color: #fde8d8;
+}
+
+section tr:nth-child(even) td {
+  background: rgba(255, 154, 86, 0.04);
+}
+
+/* Strong / Em */
+section strong {
+  color: #ffd1a8;
+  font-weight: 700;
+}
+
+section em {
+  color: #f9a8d4;
+  font-style: italic;
+}
+
+/* Link */
+section a {
+  color: #c084fc;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+section a:hover {
+  color: #ff9a56;
+}
+
+/* Horizontal rule */
+section hr {
+  border: none;
+  border-top: 1px solid rgba(255, 154, 86, 0.25);
+  margin: 24px 0;
+}
+
+/* Marp header/footer */
+section header,
+section footer {
+  color: rgba(253, 232, 216, 0.4);
+  font-size: 0.75em;
+}
+
+/* Page number */
+section::after {
+  color: rgba(253, 232, 216, 0.4);
+  font-size: 0.75em;
+}

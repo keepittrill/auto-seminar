@@ -218,51 +218,77 @@ def _build_switcher_html(active_theme: str, active_layout: str = "default") -> s
     </svg>
   </button>
   <div id="ts-panel" hidden>
-    <div class="ts-sec-hdr">🎨 테마 선택</div>
+    <div class="ts-sh">🎨 테마</div>
     <div id="ts-grid"></div>
-    <div class="ts-sec-hdr" style="margin-top:8px">📐 레이아웃</div>
+    <div class="ts-sh">📐 레이아웃</div>
     <div id="ts-layout-grid"></div>
+    <div class="ts-sh">🔡 글자 크기</div>
+    <div id="ts-fs-row">
+      <span class="ts-fs-lbl">14</span>
+      <input type="range" id="ts-fontsize" min="14" max="40" step="2" value="32">
+      <span class="ts-fs-lbl">40</span>
+      <span id="ts-fontsize-val">32px</span>
+    </div>
+    <div class="ts-sh">⚙ 표시</div>
+    <div id="ts-misc-row">
+      <button class="ts-mb" id="ts-heading-btn">제목 숨기기</button>
+      <button class="ts-mb" id="ts-align-btn">가운데 정렬</button>
+    </div>
     <button id="ts-copy-btn">📋 이 설정 복사</button>
   </div>
 </div>
 <style>
+section pre{{max-height:52vh;overflow-y:auto}}
+section.as-section-cover{{display:flex!important;flex-direction:column;
+  align-items:center!important;justify-content:center!important;text-align:center}}
+section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover h3{{
+  font-size:2.2em!important;border:none!important;padding:0!important}}
 #ts-root{{position:fixed;bottom:20px;right:20px;z-index:9999;
-          font-family:system-ui,-apple-system,sans-serif;font-size:13px}}
-#ts-btn{{width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.22);
-         background:rgba(10,10,20,.75);color:#fff;cursor:pointer;display:flex;
-         align-items:center;justify-content:center;
-         backdrop-filter:blur(10px);transition:background .2s;padding:0}}
+  font-family:system-ui,-apple-system,sans-serif;font-size:13px}}
+#ts-btn{{width:44px;height:44px;border-radius:50%;
+  border:1px solid rgba(255,255,255,.22);background:rgba(10,10,20,.75);
+  color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  backdrop-filter:blur(10px);transition:background .2s;padding:0}}
 #ts-btn:hover{{background:rgba(30,30,60,.9)}}
-#ts-panel{{position:absolute;bottom:54px;right:0;width:260px;
-           background:rgba(12,14,24,.96);border:1px solid rgba(255,255,255,.13);
-           border-radius:14px;padding:14px 12px 12px;
-           backdrop-filter:blur(20px);box-shadow:0 8px 32px rgba(0,0,0,.5)}}
-.ts-sec-hdr{{color:rgba(255,255,255,.55);font-size:.75rem;font-weight:600;
-             letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px;
-             padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.08)}}
-#ts-grid{{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}}
-.ts-item{{display:flex;align-items:center;gap:7px;padding:7px 9px;
-          border-radius:8px;border:1px solid transparent;cursor:pointer;
-          background:rgba(255,255,255,.04);transition:all .15s;color:#ddd}}
-.ts-item:hover{{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.15)}}
-.ts-item.ts-active{{background:rgba(120,100,220,.25);
-                    border-color:rgba(150,130,255,.5);color:#fff}}
+#ts-panel{{position:absolute;bottom:54px;right:0;width:268px;
+  max-height:min(580px,calc(100vh - 90px));overflow-y:auto;
+  background:rgba(12,14,24,.97);border:1px solid rgba(255,255,255,.13);
+  border-radius:14px;padding:14px 12px 12px;
+  backdrop-filter:blur(20px);box-shadow:0 8px 32px rgba(0,0,0,.55)}}
+.ts-sh{{color:rgba(255,255,255,.5);font-size:.7rem;font-weight:700;
+  letter-spacing:.07em;text-transform:uppercase;margin-bottom:7px;
+  padding-bottom:5px;border-bottom:1px solid rgba(255,255,255,.07)}}
+#ts-grid{{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px}}
+.ts-item{{display:flex;align-items:center;gap:6px;padding:6px 8px;
+  border-radius:7px;border:1px solid transparent;cursor:pointer;
+  background:rgba(255,255,255,.04);transition:all .15s;color:#ccc}}
+.ts-item:hover{{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.14)}}
+.ts-item.ts-active{{background:rgba(120,100,220,.25);border-color:rgba(150,130,255,.5);color:#fff}}
 .ts-dots{{display:flex;gap:3px;flex-shrink:0}}
-.ts-dot{{width:9px;height:9px;border-radius:50%;flex-shrink:0}}
-.ts-label{{font-size:.75rem;font-weight:500;overflow:hidden;
-           text-overflow:ellipsis;white-space:nowrap}}
-#ts-layout-grid{{display:flex;gap:6px;margin-bottom:10px}}
+.ts-dot{{width:8px;height:8px;border-radius:50%;flex-shrink:0}}
+.ts-label{{font-size:.73rem;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
+#ts-layout-grid{{display:flex;gap:5px;margin-bottom:10px}}
 .ts-ly{{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
-        padding:7px 4px;border-radius:8px;border:1px solid transparent;cursor:pointer;
-        background:rgba(255,255,255,.04);transition:all .15s;color:#ddd}}
-.ts-ly:hover{{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.15)}}
+  padding:6px 4px;border-radius:7px;border:1px solid transparent;cursor:pointer;
+  background:rgba(255,255,255,.04);transition:all .15s;color:#ccc}}
+.ts-ly:hover{{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.14)}}
 .ts-ly.ts-active{{background:rgba(120,100,220,.25);border-color:rgba(150,130,255,.5);color:#fff}}
-.ts-ly-name{{font-size:.75rem;font-weight:600}}
-.ts-ly-desc{{font-size:.65rem;color:rgba(255,255,255,.4)}}
-.ts-ly.ts-active .ts-ly-desc{{color:rgba(200,180,255,.7)}}
-#ts-copy-btn{{width:100%;padding:8px;border-radius:8px;border:none;
-              background:rgba(120,100,220,.3);color:#c4b5fd;cursor:pointer;
-              font-size:.78rem;transition:background .2s}}
+.ts-ly-name{{font-size:.73rem;font-weight:600}}
+.ts-ly-desc{{font-size:.63rem;color:rgba(255,255,255,.38)}}
+.ts-ly.ts-active .ts-ly-desc{{color:rgba(200,180,255,.65)}}
+#ts-fs-row{{display:flex;align-items:center;gap:6px;margin-bottom:10px}}
+#ts-fontsize{{flex:1;height:3px;accent-color:#a78bfa;cursor:pointer}}
+.ts-fs-lbl{{font-size:.65rem;color:rgba(255,255,255,.35);flex-shrink:0}}
+#ts-fontsize-val{{font-size:.72rem;color:#a78bfa;min-width:32px;text-align:right;flex-shrink:0}}
+#ts-misc-row{{display:flex;gap:5px;margin-bottom:10px}}
+.ts-mb{{flex:1;padding:6px;border-radius:7px;border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.04);color:#bbb;cursor:pointer;font-size:.71rem;
+  transition:all .15s;white-space:nowrap}}
+.ts-mb:hover{{background:rgba(255,255,255,.09);color:#fff}}
+.ts-mb.ts-on{{background:rgba(120,100,220,.25);border-color:rgba(150,130,255,.5);color:#fff}}
+#ts-copy-btn{{width:100%;padding:7px;border-radius:7px;border:none;
+  background:rgba(120,100,220,.3);color:#c4b5fd;cursor:pointer;
+  font-size:.76rem;transition:background .2s}}
 #ts-copy-btn:hover{{background:rgba(120,100,220,.5)}}
 #ts-copy-btn.ts-copied{{background:rgba(60,180,100,.3);color:#86efac}}
 </style>
@@ -270,10 +296,11 @@ def _build_switcher_html(active_theme: str, active_layout: str = "default") -> s
 (function(){{
   const THEMES = {themes_js};
   const LAYOUTS = {{
-    'default': {{label:'기본',  desc:'32px', css:''}},
-    'dense':   {{label:'Dense', desc:'24px', css:'section{{font-size:24px!important}}section h1{{font-size:56px!important}}section h2{{font-size:40px!important}}section h3{{font-size:32px!important}}'}},
-    'wiki':    {{label:'Wiki',  desc:'20px', css:'section{{font-size:20px!important}}section h1{{font-size:52px!important}}section h2{{font-size:36px!important}}section h3{{font-size:28px!important}}'}},
+    'default':{{label:'기본', desc:'32px',css:''}},
+    'dense':  {{label:'Dense',desc:'24px',css:'section{{font-size:24px!important}}section h1{{font-size:56px!important}}section h2{{font-size:40px!important}}section h3{{font-size:32px!important}}section pre{{max-height:50vh!important;overflow-y:auto!important}}'}},
+    'wiki':   {{label:'Wiki', desc:'20px',css:'section{{font-size:20px!important}}section h1{{font-size:52px!important}}section h2{{font-size:36px!important}}section h3{{font-size:28px!important}}section pre{{max-height:50vh!important;overflow-y:auto!important}}'}},
   }};
+  const LAYOUT_FS   = {{default:32,dense:24,wiki:20}};
   const INIT_THEME  = '{active_theme}';
   const INIT_LAYOUT = '{active_layout}';
   let current       = INIT_THEME;
@@ -300,8 +327,46 @@ def _build_switcher_html(active_theme: str, active_layout: str = "default") -> s
     el.textContent = LAYOUTS[name] ? LAYOUTS[name].css : '';
     currentLayout = name;
     localStorage.setItem('as-layout', name);
+    if (!localStorage.getItem('as-fontsize')) {{
+      const fs = LAYOUT_FS[name] || 32;
+      fsSlider.value = fs; fsVal.textContent = fs + 'px';
+    }}
     renderLayoutButtons();
   }}
+
+  const fsSlider = document.getElementById('ts-fontsize');
+  const fsVal    = document.getElementById('ts-fontsize-val');
+  fsSlider.oninput = function() {{
+    let el = document.getElementById('as-fontsize-css');
+    if (!el) {{ el = document.createElement('style'); el.id = 'as-fontsize-css'; document.head.appendChild(el); }}
+    el.textContent = 'section{{font-size:' + this.value + 'px!important}}';
+    fsVal.textContent = this.value + 'px';
+    localStorage.setItem('as-fontsize', this.value);
+  }};
+
+  let headingHidden = false;
+  const headingBtn = document.getElementById('ts-heading-btn');
+  headingBtn.onclick = function() {{
+    headingHidden = !headingHidden;
+    let el = document.getElementById('as-heading-css');
+    if (!el) {{ el = document.createElement('style'); el.id = 'as-heading-css'; document.head.appendChild(el); }}
+    el.textContent = headingHidden ? 'section h1,section h2,section h3{{display:none!important}}' : '';
+    this.textContent = headingHidden ? '제목 표시' : '제목 숨기기';
+    this.classList.toggle('ts-on', headingHidden);
+    localStorage.setItem('as-headings', headingHidden ? '0' : '1');
+  }};
+
+  let centered = false;
+  const alignBtn = document.getElementById('ts-align-btn');
+  alignBtn.onclick = function() {{
+    centered = !centered;
+    let el = document.getElementById('as-align-css');
+    if (!el) {{ el = document.createElement('style'); el.id = 'as-align-css'; document.head.appendChild(el); }}
+    el.textContent = centered ? 'section{{text-align:center}}' : '';
+    this.textContent = centered ? '왼쪽 정렬' : '가운데 정렬';
+    this.classList.toggle('ts-on', centered);
+    localStorage.setItem('as-align', centered ? 'center' : 'left');
+  }};
 
   function renderThemeButtons() {{
     const grid = document.getElementById('ts-grid');
@@ -310,10 +375,8 @@ def _build_switcher_html(active_theme: str, active_layout: str = "default") -> s
       const el = document.createElement('div');
       el.className = 'ts-item' + (key === current ? ' ts-active' : '');
       const dots = t.colors.slice(0,4).map(c =>
-        '<span class="ts-dot" style="background:' + c + '"></span>'
-      ).join('');
-      el.innerHTML = '<span class="ts-dots">' + dots + '</span>'
-                   + '<span class="ts-label">' + t.label + '</span>';
+        '<span class="ts-dot" style="background:' + c + '"></span>').join('');
+      el.innerHTML = '<span class="ts-dots">' + dots + '</span><span class="ts-label">' + t.label + '</span>';
       el.onclick = () => applyTheme(key);
       grid.appendChild(el);
     }});
@@ -325,22 +388,33 @@ def _build_switcher_html(active_theme: str, active_layout: str = "default") -> s
     Object.entries(LAYOUTS).forEach(([key, l]) => {{
       const el = document.createElement('div');
       el.className = 'ts-ly' + (key === currentLayout ? ' ts-active' : '');
-      el.innerHTML = '<span class="ts-ly-name">' + l.label + '</span>'
-                   + '<span class="ts-ly-desc">' + l.desc + '</span>';
+      el.innerHTML = '<span class="ts-ly-name">' + l.label + '</span><span class="ts-ly-desc">' + l.desc + '</span>';
       el.onclick = () => applyLayout(key);
       grid.appendChild(el);
     }});
   }}
 
+  (function detectSectionCovers() {{
+    document.querySelectorAll('section').forEach(sec => {{
+      const kids = Array.from(sec.children).filter(el =>
+        !['SCRIPT','STYLE','FOOTER','SVG'].includes(el.tagName.toUpperCase()));
+      const hasHeading    = kids.some(el => /^H[1-6]$/.test(el.tagName));
+      const hasNonHeading = kids.some(el => !/^H[1-6]$/.test(el.tagName) && el.textContent.trim());
+      if (hasHeading && !hasNonHeading) sec.classList.add('as-section-cover');
+    }});
+  }})();
+
   const btn   = document.getElementById('ts-btn');
   const panel = document.getElementById('ts-panel');
   btn.onclick = (e) => {{
-    e.stopPropagation();
-    panel.hidden = !panel.hidden;
+    e.stopPropagation(); panel.hidden = !panel.hidden;
     if (!panel.hidden) {{ renderThemeButtons(); renderLayoutButtons(); }}
   }};
   document.addEventListener('click', () => {{ panel.hidden = true; }});
   panel.addEventListener('click', e => e.stopPropagation());
+  document.addEventListener('keydown', e => {{
+    if (e.key === 'Escape' && !panel.hidden) {{ panel.hidden = true; e.stopPropagation(); }}
+  }});
 
   document.getElementById('ts-copy-btn').onclick = function() {{
     let text = 'seminar_theme: ' + current;
@@ -351,14 +425,21 @@ def _build_switcher_html(active_theme: str, active_layout: str = "default") -> s
     }});
   }};
 
-  document.addEventListener('keydown', e => {{
-    if (e.key === 'Escape' && !panel.hidden) {{ panel.hidden = true; e.stopPropagation(); }}
-  }});
-
-  const saved = localStorage.getItem('as-theme');
-  if (saved && THEMES[saved]) applyTheme(saved);
+  const savedTheme = localStorage.getItem('as-theme');
+  if (savedTheme && THEMES[savedTheme]) applyTheme(savedTheme);
   const savedLayout = localStorage.getItem('as-layout');
   if (savedLayout && LAYOUTS[savedLayout]) applyLayout(savedLayout);
+  const savedFs = localStorage.getItem('as-fontsize');
+  if (savedFs) {{
+    fsSlider.value = savedFs; fsVal.textContent = savedFs + 'px';
+    let fsEl = document.createElement('style'); fsEl.id = 'as-fontsize-css';
+    document.head.appendChild(fsEl);
+    fsEl.textContent = 'section{{font-size:' + savedFs + 'px!important}}';
+  }}
+  const savedH = localStorage.getItem('as-headings');
+  if (savedH === '0') headingBtn.click();
+  const savedA = localStorage.getItem('as-align');
+  if (savedA === 'center') alignBtn.click();
 }})();
 </script>"""
 
@@ -466,8 +547,20 @@ def build_slide(md_path: pathlib.Path, config: dict) -> dict | None:
 # ─────────────────────────────────────────────────────────────────────────────
 
 LAYOUT_CSS: dict[str, str] = {
-    "dense": "section{font-size:24px!important}section h1{font-size:56px!important}section h2{font-size:40px!important}section h3{font-size:32px!important}",
-    "wiki":  "section{font-size:20px!important}section h1{font-size:52px!important}section h2{font-size:36px!important}section h3{font-size:28px!important}",
+    "dense": (
+        "section{font-size:24px!important}"
+        "section h1{font-size:56px!important}"
+        "section h2{font-size:40px!important}"
+        "section h3{font-size:32px!important}"
+        "section pre{max-height:50vh!important;overflow-y:auto!important}"
+    ),
+    "wiki": (
+        "section{font-size:20px!important}"
+        "section h1{font-size:52px!important}"
+        "section h2{font-size:36px!important}"
+        "section h3{font-size:28px!important}"
+        "section pre{max-height:50vh!important;overflow-y:auto!important}"
+    ),
 }
 
 THEME_META: dict[str, tuple[str, str, list[str]]] = {
@@ -480,6 +573,10 @@ THEME_META: dict[str, tuple[str, str, list[str]]] = {
     "default":       ("Default",       "Marp 기본",           ["#ffffff", "#333333", "#0066cc", "#999999", "#f8f8f8"]),
     "gaia":          ("Gaia",          "Marp Gaia",           ["#0288d1", "#ffffff", "#01579b", "#e1f5fe", "#b3e5fc"]),
     "uncover":       ("Uncover",       "Marp Uncover",        ["#ffffff", "#333333", "#555555", "#f5f5f5", "#dddddd"]),
+    "retro":         ("Retro",         "CRT 터미널 · 매트릭스", ["#050e05", "#00ff41", "#7fffb0", "#004400", "#00e838"]),
+    "nord":          ("Nord",          "북극 블루 · 쿨톤",     ["#2e3440", "#88c0d0", "#5e81ac", "#a3be8c", "#eceff4"]),
+    "sunset":        ("Sunset",        "선셋 퍼플 · 웜",       ["#1a0533", "#ff9a56", "#c084fc", "#ff6b9d", "#fde8d8"]),
+    "pastel":        ("Pastel",        "파스텔 · 소프트 라이트", ["#fef6ff", "#9333ea", "#6366f1", "#ec4899", "#3d2b50"]),
 }
 
 
@@ -658,6 +755,10 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; }
 .th-default       { background: #ffffff; color: #333333; }
 .th-gaia          { background: linear-gradient(135deg,#0288d1,#01579b); color: #ffffff; }
 .th-uncover       { background: #ffffff; color: #555555; }
+.th-retro         { background: #050e05; color: #00ff41; font-family: monospace; }
+.th-nord          { background: #2e3440; color: #88c0d0; }
+.th-sunset        { background: linear-gradient(135deg,#1a0533,#2d1b4e,#3d1535); color: #ff9a56; }
+.th-pastel        { background: #fef6ff; color: #9333ea; }
 
 /* ── 공통 ────────────────────────────────────────────────── */
 .site-footer {
