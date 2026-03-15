@@ -13,7 +13,7 @@
 1. [빠른 시작 (5분)](#1-빠른-시작-5분)
 2. [슬라이드 작성 완전 가이드](#2-슬라이드-작성-완전-가이드)
 3. [Frontmatter 레퍼런스](#3-frontmatter-레퍼런스)
-4. [테마 가이드](#4-테마-가이드) · [4.5 자동 생성](#45-이미지색상으로-테마-자동-생성-create-theme)
+4. [테마 가이드](#4-테마-가이드) · [4.5 자동 생성](#45-이미지색상으로-테마-자동-생성-create-theme) · [4.6 이미지 삽입](#46-이미지미디어-삽입)
 5. [내보내기 (PDF / PPTX / PNG)](#5-내보내기-pdf--pptx--png)
 6. [로컬 개발](#6-로컬-개발)
 7. [고급 설정](#7-고급-설정)
@@ -766,6 +766,129 @@ py -3 scripts/lint_slides.py
 py -3 scripts/create_theme.py --help    # 전체 옵션
 py -3 scripts/create_theme.py --list    # themes/ 내 테마 목록
 ```
+
+---
+
+## 4.6 이미지/미디어 삽입
+
+Marp은 표준 마크다운 이미지 문법을 지원하며, 배경 이미지 등 발표에 특화된 확장 문법도 제공합니다.
+
+### 4.6.1 로컬 이미지 사용
+
+**규약**: 이미지 파일을 `slides/assets/` 디렉터리에 넣으면 빌드 시 자동으로 `dist/<슬라이드명>/assets/`에 복사됩니다.
+
+```bash
+slides/
+├── assets/
+│   ├── logo.png
+│   ├── diagram.jpg
+│   └── background.jpg
+└── my-talk.md
+```
+
+슬라이드에서 참조:
+
+```markdown
+![회사 로고](./assets/logo.png)
+![시스템 다이어그램](./assets/diagram.jpg)
+```
+
+### 4.6.2 이미지 문법 전체 레퍼런스
+
+#### 인라인 이미지 (슬라이드 내 배치)
+
+```markdown
+# 로컬 이미지
+![설명](./assets/image.jpg)
+
+# URL 이미지
+![설명](https://example.com/image.png)
+
+# 크기 지정
+![width:300px](./assets/image.jpg)
+![height:200px](./assets/image.jpg)
+![width:50%](./assets/image.jpg)
+```
+
+#### 배경 이미지 (슬라이드 전체 배경)
+
+```markdown
+# 전체 배경 이미지
+![bg](./assets/background.jpg)
+
+# 배경 + 밝기 조절
+![bg brightness:.5](./assets/background.jpg)
+
+# 배경 + 흐림 효과
+![bg blur:5px](./assets/background.jpg)
+
+# 배경 + 크기 조절
+![bg fit](./assets/background.jpg)
+![bg cover](./assets/background.jpg)   (기본값)
+![bg contain](./assets/background.jpg)
+```
+
+#### 배경 분할 (이미지 + 텍스트 나란히)
+
+```markdown
+# 왼쪽 40% 이미지, 오른쪽 60% 텍스트
+![bg left:40%](./assets/side.jpg)
+
+## 제목
+
+텍스트 콘텐츠가 오른쪽에 표시됩니다.
+
+---
+
+# 오른쪽 50% 이미지, 왼쪽 50% 텍스트
+![bg right](./assets/side.jpg)
+
+## 제목
+
+텍스트 콘텐츠가 왼쪽에 표시됩니다.
+```
+
+### 4.6.3 이미지 문법 도우미 버튼 (🎨 패널)
+
+슬라이드 뷰어의 🎨 패널을 열면 **🖼 이미지 삽입** 섹션에서 이미지 마크다운 스니펫을 클립보드로 즉시 복사할 수 있습니다.
+
+| 버튼 | 복사되는 내용 |
+|------|-------------|
+| 인라인 | `![이미지 설명](./assets/image.jpg)` |
+| 배경 | `![bg](./assets/bg.jpg)` |
+| 분할 | `![bg left:40%](./assets/left.jpg)` |
+
+복사 후 MD 소스 에디터(✏️ MD 소스 편집)에 붙여넣고 파일명을 수정하세요.
+
+### 4.6.4 실전 예시
+
+```markdown
+## 아키텍처 다이어그램
+
+![bg right:45%](./assets/architecture.png)
+
+### 핵심 구성요소
+
+- **API Gateway** — 인증 및 라우팅
+- **서비스 메시** — 서비스 간 통신
+- **데이터 레이어** — PostgreSQL + Redis
+```
+
+```markdown
+## 팀 소개
+
+![bg left:30% brightness:.8](./assets/team-photo.jpg)
+
+- **개발팀** 10명
+- **디자인팀** 3명
+- **PM** 2명
+```
+
+### 4.6.5 주의사항
+
+- `slides/assets/` 디렉터리는 **모든 슬라이드가 공유**합니다. 파일명 충돌에 주의하세요.
+- 이미지 파일이 크면 빌드/배포 시간이 늘어납니다. 웹 최적화된 이미지(JPG/WebP, 1920px 이하)를 권장합니다.
+- GitHub Pages는 파일 크기 제한이 있으므로 대용량 이미지는 외부 URL을 사용하세요.
 
 ---
 

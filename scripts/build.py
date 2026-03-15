@@ -235,6 +235,26 @@ def _build_switcher_html(active_theme: str, active_layout: str = "default") -> s
       <button class="ts-mb" id="ts-align-btn">가운데 정렬</button>
     </div>
     <button id="ts-copy-btn">📋 이 설정 복사</button>
+    <div class="ts-sh" style="margin-top:10px">✏️ 편집</div>
+    <button id="ts-edit-btn">✏️ MD 소스 편집</button>
+    <div class="ts-sh">🖼 이미지 삽입</div>
+    <div id="ts-img-row">
+      <button class="ts-ib" id="ts-img-inline">인라인</button>
+      <button class="ts-ib" id="ts-img-bg">배경</button>
+      <button class="ts-ib" id="ts-img-split">분할</button>
+    </div>
+  </div>
+</div>
+<div id="ts-drawer" hidden>
+  <div id="ts-dh">
+    <span>✏️ MD 소스 편집</span>
+    <span id="ts-draft-badge" hidden>• 임시저장됨</span>
+    <button id="ts-dc" title="닫기">✕</button>
+  </div>
+  <textarea id="ts-ta" spellcheck="false" placeholder="마크다운 소스가 여기에 표시됩니다..."></textarea>
+  <div id="ts-df">
+    <button id="ts-reset">↺ 원본 복원</button>
+    <button id="ts-dl">💾 .md 다운로드</button>
   </div>
 </div>
 <style>
@@ -291,6 +311,40 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
   font-size:.76rem;transition:background .2s}}
 #ts-copy-btn:hover{{background:rgba(120,100,220,.5)}}
 #ts-copy-btn.ts-copied{{background:rgba(60,180,100,.3);color:#86efac}}
+#ts-edit-btn{{width:100%;padding:7px;border-radius:7px;border:none;
+  background:rgba(255,255,255,.06);color:#e2e8f0;cursor:pointer;
+  font-size:.76rem;transition:background .2s;margin-bottom:10px}}
+#ts-edit-btn:hover{{background:rgba(255,255,255,.12)}}
+#ts-img-row{{display:flex;gap:5px;margin-bottom:4px}}
+.ts-ib{{flex:1;padding:6px 4px;border-radius:7px;border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.04);color:#bbb;cursor:pointer;font-size:.7rem;
+  transition:all .15s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+.ts-ib:hover{{background:rgba(255,255,255,.09);color:#fff;border-color:rgba(255,255,255,.2)}}
+.ts-ib.ts-copied{{background:rgba(60,180,100,.2);border-color:rgba(60,180,100,.4);color:#86efac}}
+#ts-drawer{{position:fixed;top:0;right:0;bottom:0;width:min(480px,100vw);
+  background:rgba(10,12,22,.98);border-left:1px solid rgba(255,255,255,.13);
+  display:flex;flex-direction:column;z-index:10000;
+  box-shadow:-8px 0 32px rgba(0,0,0,.5)}}
+#ts-dh{{display:flex;align-items:center;gap:8px;padding:14px 16px;
+  border-bottom:1px solid rgba(255,255,255,.1);flex-shrink:0}}
+#ts-dh>span:first-child{{flex:1;font-size:.87rem;font-weight:600;color:#e2e8f0}}
+#ts-draft-badge{{font-size:.68rem;color:#86efac;background:rgba(60,180,100,.15);
+  border:1px solid rgba(60,180,100,.3);border-radius:4px;padding:1px 6px}}
+#ts-dc{{background:none;border:none;color:#888;cursor:pointer;font-size:1.1rem;
+  padding:2px 6px;border-radius:4px;line-height:1}}
+#ts-dc:hover{{background:rgba(255,255,255,.08);color:#fff}}
+#ts-ta{{flex:1;resize:none;background:rgba(255,255,255,.03);color:#e2e8f0;
+  border:none;padding:16px;font-family:'JetBrains Mono',Consolas,monospace;
+  font-size:.8rem;line-height:1.6;outline:none;overflow-y:auto;tab-size:2}}
+#ts-ta::placeholder{{color:#444}}
+#ts-df{{display:flex;gap:8px;padding:12px 16px;
+  border-top:1px solid rgba(255,255,255,.1);flex-shrink:0}}
+#ts-reset{{flex:1;padding:8px;border-radius:7px;border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.04);color:#aaa;cursor:pointer;font-size:.77rem;transition:all .15s}}
+#ts-reset:hover{{background:rgba(255,255,255,.09);color:#fff}}
+#ts-dl{{flex:2;padding:8px;border-radius:7px;border:none;
+  background:rgba(120,100,220,.3);color:#c4b5fd;cursor:pointer;font-size:.77rem;transition:background .2s}}
+#ts-dl:hover{{background:rgba(120,100,220,.5)}}
 </style>
 <script>
 (function(){{
@@ -440,11 +494,70 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
   if (savedH === '0') headingBtn.click();
   const savedA = localStorage.getItem('as-align');
   if (savedA === 'center') alignBtn.click();
+
+  // ── MD 소스 에디터 ──────────────────────────────────────────────────────
+  const drawer     = document.getElementById('ts-drawer');
+  const draftBadge = document.getElementById('ts-draft-badge');
+  const ta         = document.getElementById('ts-ta');
+  const srcEl      = document.getElementById('marp-source');
+  const origMd     = srcEl ? srcEl.textContent : '';
+  const _parts     = location.pathname.split('/').filter(Boolean);
+  const _last      = _parts.pop() || '';
+  const fileStem   = (_last === 'index.html' || _last === '') ? (_parts.pop() || 'seminar') : _last;
+  const DRAFT_KEY  = 'as-draft-' + fileStem;
+
+  document.getElementById('ts-edit-btn').onclick = function() {{
+    const draft = localStorage.getItem(DRAFT_KEY);
+    ta.value = draft || origMd;
+    draftBadge.hidden = !draft;
+    drawer.hidden = false;
+    panel.hidden = true;
+    ta.focus();
+  }};
+  document.getElementById('ts-dc').onclick = function() {{ drawer.hidden = true; }};
+  ta.oninput = function() {{
+    localStorage.setItem(DRAFT_KEY, this.value);
+    draftBadge.hidden = false;
+  }};
+  document.getElementById('ts-reset').onclick = function() {{
+    if (confirm('원본 MD로 복원하시겠습니까? 임시저장 내용이 삭제됩니다.')) {{
+      ta.value = origMd;
+      localStorage.removeItem(DRAFT_KEY);
+      draftBadge.hidden = true;
+    }}
+  }};
+  document.getElementById('ts-dl').onclick = function() {{
+    const blob = new Blob([ta.value], {{type:'text/markdown;charset=utf-8'}});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = fileStem + '.md';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }};
+
+  // ── 이미지 문법 도우미 ──────────────────────────────────────────────────
+  function copySnippet(btnEl, text) {{
+    navigator.clipboard.writeText(text).then(function() {{
+      btnEl.classList.add('ts-copied');
+      const orig = btnEl.textContent;
+      btnEl.textContent = '✓ 복사됨';
+      setTimeout(function() {{ btnEl.textContent = orig; btnEl.classList.remove('ts-copied'); }}, 2000);
+    }});
+  }}
+  document.getElementById('ts-img-inline').onclick = function() {{
+    copySnippet(this, '![이미지 설명](./assets/image.jpg)');
+  }};
+  document.getElementById('ts-img-bg').onclick = function() {{
+    copySnippet(this, '![bg](./assets/bg.jpg)');
+  }};
+  document.getElementById('ts-img-split').onclick = function() {{
+    copySnippet(this, '![bg left:40%](./assets/left.jpg)');
+  }};
 }})();
 </script>"""
 
 
-def _inject_theme_switcher(html_path: pathlib.Path, active_theme: str, active_layout: str = "default") -> None:
+def _inject_theme_switcher(html_path: pathlib.Path, active_theme: str, active_layout: str = "default", original_md: str = "") -> None:
     """Marp 생성 HTML에 테마+레이아웃 스위처 UI를 후처리로 주입.
 
     전략: Marp이 내장 CSS를 minify하면서 /* @theme */ 주석을 삭제하므로
@@ -475,8 +588,12 @@ def _inject_theme_switcher(html_path: pathlib.Path, active_theme: str, active_la
         )
     html = html.replace("</head>", "\n".join(override_styles) + "\n</head>", 1)
 
-    # 3. 스위처 UI 주입 (</body> 직전)
-    html = html.replace("</body>", _build_switcher_html(active_theme, active_layout) + "\n</body>", 1)
+    # 3. 원본 MD 소스 embed (에디터가 읽을 수 있도록)
+    escaped_md = original_md.replace("</script>", "<\\/script>")
+    source_tag = f'<script id="marp-source" type="text/x-markdown">{escaped_md}</script>'
+
+    # 4. 스위처 UI + 소스 태그 주입 (</body> 직전)
+    html = html.replace("</body>", source_tag + "\n" + _build_switcher_html(active_theme, active_layout) + "\n</body>", 1)
 
     html_path.write_text(html, encoding="utf-8")
 
@@ -522,13 +639,22 @@ def build_slide(md_path: pathlib.Path, config: dict) -> dict | None:
         ], stem)
         if not ok:
             return None
-        _inject_theme_switcher(out_html, seminar_theme, seminar_layout)
+        _inject_theme_switcher(out_html, seminar_theme, seminar_layout, text)
         print(f"  ✓  {stem}  →  dist/{stem}/index.html")
 
         # ── PDF / PPTX / PNG ─────────────────────────────────────────────────
         exports = build_exports(tmp, stem, out_dir)
     finally:
         tmp.unlink(missing_ok=True)
+
+    # ── assets 복사 (slides/assets/ → dist/<stem>/assets/) ─────────────────
+    assets_src = SLIDES_DIR / "assets"
+    assets_dst = out_dir / "assets"
+    if assets_src.is_dir():
+        if assets_dst.exists():
+            shutil.rmtree(assets_dst)
+        shutil.copytree(assets_src, assets_dst)
+        print(f"  ✓  assets  →  dist/{stem}/assets/")
 
     return {
         "stem":    stem,
