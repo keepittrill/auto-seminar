@@ -245,6 +245,7 @@ def _build_switcher_html(active_theme: str, active_layout: str = "default") -> s
     </div>
   </div>
 </div>
+<div id="ts-backdrop" hidden></div>
 <div id="ts-drawer" hidden>
   <div id="ts-dh">
     <span>✏️ MD 소스 편집</span>
@@ -321,6 +322,7 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
   transition:all .15s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
 .ts-ib:hover{{background:rgba(255,255,255,.09);color:#fff;border-color:rgba(255,255,255,.2)}}
 .ts-ib.ts-copied{{background:rgba(60,180,100,.2);border-color:rgba(60,180,100,.4);color:#86efac}}
+#ts-backdrop{{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:9998;cursor:pointer}}
 #ts-drawer{{position:fixed;top:0;right:0;bottom:0;width:min(480px,100vw);
   background:rgba(10,12,22,.98);border-left:1px solid rgba(255,255,255,.13);
   display:flex;flex-direction:column;z-index:10000;
@@ -497,24 +499,35 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
 
   // ── MD 소스 에디터 ──────────────────────────────────────────────────────
   const drawer     = document.getElementById('ts-drawer');
+  const backdrop   = document.getElementById('ts-backdrop');
   const draftBadge = document.getElementById('ts-draft-badge');
   const ta         = document.getElementById('ts-ta');
-  const srcEl      = document.getElementById('marp-source');
-  const origMd     = srcEl ? srcEl.textContent : '';
+  const origMd     = window.__marpSrc || '';
   const _parts     = location.pathname.split('/').filter(Boolean);
   const _last      = _parts.pop() || '';
   const fileStem   = (_last === 'index.html' || _last === '') ? (_parts.pop() || 'seminar') : _last;
   const DRAFT_KEY  = 'as-draft-' + fileStem;
 
-  document.getElementById('ts-edit-btn').onclick = function() {{
+  function openDrawer() {{
     const draft = localStorage.getItem(DRAFT_KEY);
     ta.value = draft || origMd;
     draftBadge.hidden = !draft;
     drawer.hidden = false;
+    backdrop.hidden = false;
+    const dw = Math.min(480, window.innerWidth);
+    document.getElementById('ts-root').style.right = (dw + 8) + 'px';
     panel.hidden = true;
     ta.focus();
-  }};
-  document.getElementById('ts-dc').onclick = function() {{ drawer.hidden = true; }};
+  }}
+  function closeDrawer() {{
+    drawer.hidden = true;
+    backdrop.hidden = true;
+    document.getElementById('ts-root').style.right = '20px';
+  }}
+
+  document.getElementById('ts-edit-btn').onclick = openDrawer;
+  document.getElementById('ts-dc').onclick = closeDrawer;
+  backdrop.addEventListener('click', closeDrawer);
   ta.oninput = function() {{
     localStorage.setItem(DRAFT_KEY, this.value);
     draftBadge.hidden = false;
@@ -588,9 +601,9 @@ def _inject_theme_switcher(html_path: pathlib.Path, active_theme: str, active_la
         )
     html = html.replace("</head>", "\n".join(override_styles) + "\n</head>", 1)
 
-    # 3. 원본 MD 소스 embed (에디터가 읽을 수 있도록)
-    escaped_md = original_md.replace("</script>", "<\\/script>")
-    source_tag = f'<script id="marp-source" type="text/x-markdown">{escaped_md}</script>'
+    # 3. 원본 MD 소스 embed — json.dumps()로 JS 변수에 직접 대입 (script 태그 파싱 문제 회피)
+    md_json = json.dumps(original_md, ensure_ascii=False)
+    source_tag = f'<script>window.__marpSrc={md_json};</script>'
 
     # 4. 스위처 UI + 소스 태그 주입 (</body> 직전)
     html = html.replace("</body>", source_tag + "\n" + _build_switcher_html(active_theme, active_layout) + "\n</body>", 1)
