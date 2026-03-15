@@ -196,12 +196,13 @@ figcaption{{text-align:center;padding:8px;color:#64748b;font-size:.75rem}}
 # Theme switcher (post-processing)
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _build_switcher_html(active_theme: str, active_layout: str = "default") -> str:
+def _build_switcher_html(active_theme: str, active_layout: str = "default", original_md: str = "") -> str:
     """테마+레이아웃 스위처 플로팅 UI HTML + CSS + JS 문자열 반환."""
     themes_js = json.dumps(
         {k: {"label": v[0], "colors": v[2]} for k, v in THEME_META.items()},
         ensure_ascii=False,
     )
+    orig_md_js = json.dumps(original_md, ensure_ascii=False)
     return f"""<!-- auto-seminar theme switcher -->
 <div id="ts-root">
   <button id="ts-btn" title="테마·레이아웃 변경" aria-label="테마·레이아웃 변경">
@@ -264,7 +265,7 @@ section.as-section-cover{{display:flex!important;flex-direction:column;
   align-items:center!important;justify-content:center!important;text-align:center}}
 section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover h3{{
   font-size:2.2em!important;border:none!important;padding:0!important}}
-#ts-root{{position:fixed;bottom:20px;right:20px;z-index:9999;
+#ts-root{{position:fixed;bottom:20px;right:20px;z-index:10001;
   font-family:system-ui,-apple-system,sans-serif;font-size:13px}}
 #ts-btn{{width:44px;height:44px;border-radius:50%;
   border:1px solid rgba(255,255,255,.22);background:rgba(10,10,20,.75);
@@ -502,7 +503,7 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
   const backdrop   = document.getElementById('ts-backdrop');
   const draftBadge = document.getElementById('ts-draft-badge');
   const ta         = document.getElementById('ts-ta');
-  const origMd     = window.__marpSrc || '';
+  const origMd     = {orig_md_js};
   const _parts     = location.pathname.split('/').filter(Boolean);
   const _last      = _parts.pop() || '';
   const fileStem   = (_last === 'index.html' || _last === '') ? (_parts.pop() || 'seminar') : _last;
@@ -510,20 +511,16 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
 
   function openDrawer() {{
     const draft = localStorage.getItem(DRAFT_KEY);
-    const src = origMd || window.__marpSrc || '';
-    ta.value = draft || src;
-    draftBadge.hidden = !draft;
+    ta.value = (draft != null && draft !== '') ? draft : origMd;
+    draftBadge.hidden = !(draft != null && draft !== '');
     drawer.hidden = false;
     backdrop.hidden = false;
-    const dw = Math.min(480, window.innerWidth);
-    document.getElementById('ts-root').style.right = (dw + 8) + 'px';
     panel.hidden = true;
     ta.focus();
   }}
   function closeDrawer() {{
     drawer.hidden = true;
     backdrop.hidden = true;
-    document.getElementById('ts-root').style.right = '20px';
   }}
 
   document.getElementById('ts-edit-btn').onclick = openDrawer;
@@ -535,7 +532,7 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
   }};
   document.getElementById('ts-reset').onclick = function() {{
     if (confirm('원본 MD로 복원하시겠습니까? 임시저장 내용이 삭제됩니다.')) {{
-      ta.value = origMd || window.__marpSrc || '';
+      ta.value = origMd;
       localStorage.removeItem(DRAFT_KEY);
       draftBadge.hidden = true;
     }}
@@ -602,12 +599,8 @@ def _inject_theme_switcher(html_path: pathlib.Path, active_theme: str, active_la
         )
     html = html.replace("</head>", "\n".join(override_styles) + "\n</head>", 1)
 
-    # 3. 원본 MD 소스 embed — json.dumps()로 JS 변수에 직접 대입 (script 태그 파싱 문제 회피)
-    md_json = json.dumps(original_md, ensure_ascii=False)
-    source_tag = f'<script>window.__marpSrc={md_json};</script>'
-
-    # 4. 스위처 UI + 소스 태그 주입 (</body> 직전)
-    html = html.replace("</body>", source_tag + "\n" + _build_switcher_html(active_theme, active_layout) + "\n</body>", 1)
+    # 3. 스위처 UI 주입 (</body> 직전) — origMd를 함수 인자로 전달해 IIFE 내부에 직접 embed
+    html = html.replace("</body>", _build_switcher_html(active_theme, active_layout, original_md) + "\n</body>", 1)
 
     html_path.write_text(html, encoding="utf-8")
 
