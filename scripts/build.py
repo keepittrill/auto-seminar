@@ -510,7 +510,8 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
 
   function openDrawer() {{
     const draft = localStorage.getItem(DRAFT_KEY);
-    ta.value = draft || origMd;
+    const src = origMd || window.__marpSrc || '';
+    ta.value = draft || src;
     draftBadge.hidden = !draft;
     drawer.hidden = false;
     backdrop.hidden = false;
@@ -534,7 +535,7 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
   }};
   document.getElementById('ts-reset').onclick = function() {{
     if (confirm('원본 MD로 복원하시겠습니까? 임시저장 내용이 삭제됩니다.')) {{
-      ta.value = origMd;
+      ta.value = origMd || window.__marpSrc || '';
       localStorage.removeItem(DRAFT_KEY);
       draftBadge.hidden = true;
     }}
