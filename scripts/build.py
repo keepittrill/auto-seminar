@@ -202,7 +202,7 @@ def _build_switcher_html(active_theme: str, active_layout: str = "default", orig
         {k: {"label": v[0], "colors": v[2]} for k, v in THEME_META.items()},
         ensure_ascii=False,
     )
-    orig_md_js = json.dumps(original_md, ensure_ascii=False)
+    orig_md_js = json.dumps(original_md, ensure_ascii=False).replace('</script>', '<\\/script>').replace('</Script>', '<\\/Script>')
     return f"""<!-- auto-seminar theme switcher -->
 <div id="ts-root">
   <button id="ts-btn" title="테마·레이아웃 변경" aria-label="테마·레이아웃 변경">
@@ -348,6 +348,7 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
 #ts-dl{{flex:2;padding:8px;border-radius:7px;border:none;
   background:rgba(120,100,220,.3);color:#c4b5fd;cursor:pointer;font-size:.77rem;transition:background .2s}}
 #ts-dl:hover{{background:rgba(120,100,220,.5)}}
+#ts-drawer[hidden],#ts-backdrop[hidden]{{display:none!important}}
 </style>
 <script>
 (function(){{
@@ -469,8 +470,11 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
   }};
   document.addEventListener('click', () => {{ panel.hidden = true; }});
   panel.addEventListener('click', e => e.stopPropagation());
-  document.addEventListener('keydown', e => {{
-    if (e.key === 'Escape' && !panel.hidden) {{ panel.hidden = true; e.stopPropagation(); }}
+  document.addEventListener('keydown', function(e) {{
+    if (e.key === 'Escape') {{
+      if (!drawer.hidden) {{ closeDrawer(); e.stopPropagation(); return; }}
+      if (!panel.hidden)  {{ panel.hidden = true; e.stopPropagation(); }}
+    }}
   }});
 
   document.getElementById('ts-copy-btn').onclick = function() {{
@@ -503,6 +507,7 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
   const backdrop   = document.getElementById('ts-backdrop');
   const draftBadge = document.getElementById('ts-draft-badge');
   const ta         = document.getElementById('ts-ta');
+  const tsRoot     = document.getElementById('ts-root');
   const origMd     = {orig_md_js};
   const _parts     = location.pathname.split('/').filter(Boolean);
   const _last      = _parts.pop() || '';
@@ -510,17 +515,21 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
   const DRAFT_KEY  = 'as-draft-' + fileStem;
 
   function openDrawer() {{
-    const draft = localStorage.getItem(DRAFT_KEY);
-    ta.value = (draft != null && draft !== '') ? draft : origMd;
-    draftBadge.hidden = !(draft != null && draft !== '');
     drawer.hidden = false;
     backdrop.hidden = false;
     panel.hidden = true;
-    ta.focus();
+    tsRoot.style.display = 'none';
+    requestAnimationFrame(function() {{
+      var draft = localStorage.getItem(DRAFT_KEY);
+      ta.value = (draft != null && draft !== '') ? draft : origMd;
+      draftBadge.hidden = !(draft != null && draft !== '');
+      ta.focus();
+    }});
   }}
   function closeDrawer() {{
     drawer.hidden = true;
     backdrop.hidden = true;
+    tsRoot.style.display = '';
   }}
 
   document.getElementById('ts-edit-btn').onclick = openDrawer;
