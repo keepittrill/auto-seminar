@@ -556,10 +556,83 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
   }};
 
   // ── 이미지 문법 도우미 ──────────────────────────────────────────────────
-  // 버튼 클릭 → 드로어 자동 열기 + textarea에 직접 삽입
+  // 현재 보고 있는 슬라이드 인덱스 감지 (Marp bespoke-marp-active 클래스)
+  function getCurrentSlideIdx() {{
+    var active = document.querySelector('svg.bespoke-marp-slide.bespoke-marp-active');
+    if (!active) return 0;
+    return Array.from(document.querySelectorAll('svg.bespoke-marp-slide')).indexOf(active);
+  }}
+
+  // MD 텍스트에서 slideIdx번째 슬라이드의 끝 위치(삽입 지점) 계산
+  function findSlideInsertPos(md, slideIdx) {{
+    // frontmatter 끝 위치
+    var bodyStart = 0;
+    if (md.startsWith('---')) {{
+      var fmEnd = md.indexOf('\\n---', 3);
+      if (fmEnd !== -1) bodyStart = fmEnd + 4;
+    }}
+    // headingDivider 파싱
+    var fmText = md.substring(0, bodyStart);
+    var hdMatch = fmText.match(/headingDivider:\\s*(\\[[\\d,\\s]+\\]|\\d+)/);
+    var hdLevels = [2];
+    if (hdMatch) {{
+      try {{
+        var v = hdMatch[1].trim();
+        hdLevels = v.startsWith('[') ? JSON.parse(v) : [parseInt(v)];
+      }} catch(e) {{}}
+    }}
+    // 각 슬라이드의 시작 위치 목록 구성
+    var lines = md.substring(bodyStart).split('\\n');
+    var slideStarts = [bodyStart];
+    var charPos = bodyStart;
+    var inCode = false;
+    for (var i = 0; i < lines.length; i++) {{
+      var line = lines[i];
+      if (/^```/.test(line)) inCode = !inCode;
+      if (!inCode && i > 0) {{
+        if (line.trim() === '---') {{
+          slideStarts.push(charPos + line.length + 1); // --- 이후
+        }} else {{
+          for (var li = 0; li < hdLevels.length; li++) {{
+            if (line.startsWith('#'.repeat(hdLevels[li]) + ' ')) {{
+              slideStarts.push(charPos); break;
+            }}
+          }}
+        }}
+      }}
+      charPos += line.length + 1;
+    }}
+    // slideIdx번째 슬라이드의 콘텐츠 끝 (다음 슬라이드 시작 직전, --- 제외)
+    var idx = Math.min(slideIdx, slideStarts.length - 1);
+    var end = idx + 1 < slideStarts.length ? slideStarts[idx + 1] : md.length;
+    // 슬라이드 내용에서 trailing --- 와 공백 제거 후 삽입 위치 반환
+    var content = md.substring(slideStarts[idx], end).replace(/\\n+---\\n?$/, '').trimEnd();
+    return slideStarts[idx] + content.length;
+  }}
+
+  // 삽입 실행: 현재 슬라이드 끝에 스니펫 추가
+  function doInsert(snippet) {{
+    var pos = (drawer.hidden) ? ta.value.length : findSlideInsertPos(ta.value, getCurrentSlideIdx());
+    var before = ta.value.substring(0, pos);
+    var after  = ta.value.substring(pos);
+    var prefix = (before === '' || before.endsWith('\\n')) ? '\\n' : '\\n\\n';
+    var suffix = (after === '' || after.startsWith('\\n')) ? '' : '\\n';
+    var inserted = prefix + snippet + suffix;
+    ta.value = before + inserted + after;
+    var newPos = pos + inserted.length;
+    ta.selectionStart = ta.selectionEnd = newPos;
+    // 삽입 위치로 textarea 스크롤
+    var linesBefore = ta.value.substring(0, newPos).split('\\n').length;
+    var lineH = ta.scrollHeight / (ta.value.split('\\n').length || 1);
+    ta.scrollTop = Math.max(0, (linesBefore - 4) * lineH);
+    localStorage.setItem(DRAFT_KEY, ta.value);
+    draftBadge.hidden = false;
+    ta.focus();
+  }}
+
+  // 버튼 클릭 → 드로어 자동 열기 + 현재 슬라이드 끝에 삽입
   function insertSnippet(snippet) {{
     if (drawer.hidden) {{
-      // 드로어가 닫혀 있으면 열면서 삽입
       drawer.hidden = false;
       backdrop.hidden = false;
       panel.hidden = true;
@@ -567,13 +640,8 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
       requestAnimationFrame(function() {{
         var draft = localStorage.getItem(DRAFT_KEY);
         ta.value = (draft != null && draft !== '') ? draft : origMd;
-        var val = ta.value;
-        var prefix = (val === '' || val.endsWith('\\n')) ? '' : '\\n';
-        ta.value = val + prefix + snippet + '\\n';
-        ta.selectionStart = ta.selectionEnd = ta.value.length;
-        localStorage.setItem(DRAFT_KEY, ta.value);
-        draftBadge.hidden = false;
-        ta.focus();
+        draftBadge.hidden = !(draft != null && draft !== '');
+        doInsert(snippet);
       }});
     }} else {{
       // 드로어가 이미 열려 있으면 커서 위치에 삽입
