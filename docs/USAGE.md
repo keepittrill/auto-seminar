@@ -259,16 +259,16 @@ async def process_data(items):
 ```markdown
 ## 아키텍처 다이어그램
 
-![시스템 아키텍처](./images/arch-v2.png)
+![시스템 아키텍처](./assets/arch-v2.png)
 
 <!-- 크기 조정 (Marp 전용 문법) -->
-![w:800](./images/arch-v2.png)
+![width:800px](./assets/arch-v2.png)
 
 <!-- 가운데 정렬 -->
-![w:600 center](./images/arch-v2.png)
+![width:600px center](./assets/arch-v2.png)
 ```
 
-이미지 파일은 `slides/images/`에 저장하세요.
+이미지 파일은 `slides/assets/`에 저장하세요. (빌드 시 `dist/<슬라이드명>/assets/`에 자동 복사됩니다.)
 
 #### 수식 (KaTeX)
 
@@ -773,6 +773,8 @@ py -3 scripts/create_theme.py --list    # themes/ 내 테마 목록
 
 Marp은 표준 마크다운 이미지 문법을 지원하며, 배경 이미지 등 발표에 특화된 확장 문법도 제공합니다.
 
+> 📁 **동작 예시**: `slides/IMAGE_DEMO.md` + `slides/assets/sample-diagram.svg` — 저장소에 포함된 샘플 파일로 모든 이미지 문법을 바로 확인할 수 있습니다.
+
 ### 4.6.1 로컬 이미지 사용
 
 **규약**: 이미지 파일을 `slides/assets/` 디렉터리에 넣으면 빌드 시 자동으로 `dist/<슬라이드명>/assets/`에 복사됩니다.
@@ -887,8 +889,9 @@ slides/
 ### 4.6.5 주의사항
 
 - `slides/assets/` 디렉터리는 **모든 슬라이드가 공유**합니다. 파일명 충돌에 주의하세요.
-- 이미지 파일이 크면 빌드/배포 시간이 늘어납니다. 웹 최적화된 이미지(JPG/WebP, 1920px 이하)를 권장합니다.
+- 이미지 파일이 크면 빌드/배포 시간이 늘어납니다. 웹 최적화된 이미지(JPG/WebP/SVG, 1920px 이하)를 권장합니다.
 - GitHub Pages는 파일 크기 제한이 있으므로 대용량 이미지는 외부 URL을 사용하세요.
+- **이미지 도우미 버튼 (클립보드 복사)** 은 **HTTPS**(GitHub Pages) 또는 **localhost** 환경에서만 동작합니다. `file://` 로컬 직접 열기에서는 브라우저 보안 정책으로 클립보드 API가 차단됩니다. → 로컬 확인 시 `npm run dev` 또는 `python -m http.server`로 로컬 서버를 띄우세요.
 
 ---
 
@@ -1678,10 +1681,10 @@ Chrome이 없으면 PDF/PNG는 생성되지 않지만 HTML과 PPTX는 항상 생
 ![img](../assets/arch.png)
 
 <!-- ✅ slides/ 기준 상대 경로 -->
-![img](./images/arch.png)
+![img](./assets/arch.png)
 ```
 
-이미지 파일은 반드시 `slides/images/`에 저장하세요.
+이미지 파일은 반드시 `slides/assets/`에 저장하세요. (`slides/assets/` → 빌드 시 `dist/<슬라이드명>/assets/`에 자동 복사)
 
 ---
 

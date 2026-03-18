@@ -1201,7 +1201,10 @@ def main() -> None:
             print(f"⚠  dist/ 삭제 중 잠긴 파일 발견 ({e.filename}) — 건너뜀", file=sys.stderr)
     DIST_DIR.mkdir(exist_ok=True)
 
-    md_files = sorted(SLIDES_DIR.glob("*.md"))
+    md_files = sorted(
+        f for f in SLIDES_DIR.glob("*.md")
+        if not f.name.startswith("_build_") and f.name.lower() != "readme.md"
+    )
     if not md_files:
         print("⚠  No .md files found in slides/")
         generate_landing([], config)
