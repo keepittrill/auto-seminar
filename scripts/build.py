@@ -251,11 +251,11 @@ def _build_switcher_html(active_theme: str, active_layout: str = "default", orig
   <div id="ts-dh">
     <span>✏️ MD 소스 편집</span>
     <span id="ts-draft-badge" hidden>• 임시저장됨</span>
-    <button id="ts-dc" title="닫기">✕</button>
+    <button id="ts-dc" title="닫기 (변경사항은 임시저장됨)">✕</button>
   </div>
   <textarea id="ts-ta" spellcheck="false" placeholder="마크다운 소스가 여기에 표시됩니다..."></textarea>
   <div id="ts-df">
-    <button id="ts-reset">↺ 원본 복원</button>
+    <button id="ts-reset">↺ 변경 취소</button>
     <button id="ts-dl">💾 .md 다운로드</button>
   </div>
 </div>
@@ -540,7 +540,7 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
     draftBadge.hidden = false;
   }};
   document.getElementById('ts-reset').onclick = function() {{
-    if (confirm('원본 MD로 복원하시겠습니까? 임시저장 내용이 삭제됩니다.')) {{
+    if (confirm('변경사항을 모두 취소하고 원본으로 되돌리겠습니까?')) {{
       ta.value = origMd;
       localStorage.removeItem(DRAFT_KEY);
       draftBadge.hidden = true;
@@ -556,22 +556,48 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
   }};
 
   // ── 이미지 문법 도우미 ──────────────────────────────────────────────────
-  function copySnippet(btnEl, text) {{
-    navigator.clipboard.writeText(text).then(function() {{
-      btnEl.classList.add('ts-copied');
-      const orig = btnEl.textContent;
-      btnEl.textContent = '✓ 복사됨';
-      setTimeout(function() {{ btnEl.textContent = orig; btnEl.classList.remove('ts-copied'); }}, 2000);
-    }});
+  // 버튼 클릭 → 드로어 자동 열기 + textarea에 직접 삽입
+  function insertSnippet(snippet) {{
+    if (drawer.hidden) {{
+      // 드로어가 닫혀 있으면 열면서 삽입
+      drawer.hidden = false;
+      backdrop.hidden = false;
+      panel.hidden = true;
+      tsRoot.style.display = 'none';
+      requestAnimationFrame(function() {{
+        var draft = localStorage.getItem(DRAFT_KEY);
+        ta.value = (draft != null && draft !== '') ? draft : origMd;
+        var val = ta.value;
+        var prefix = (val === '' || val.endsWith('\\n')) ? '' : '\\n';
+        ta.value = val + prefix + snippet + '\\n';
+        ta.selectionStart = ta.selectionEnd = ta.value.length;
+        localStorage.setItem(DRAFT_KEY, ta.value);
+        draftBadge.hidden = false;
+        ta.focus();
+      }});
+    }} else {{
+      // 드로어가 이미 열려 있으면 커서 위치에 삽입
+      var start = ta.selectionStart;
+      var before = ta.value.substring(0, start);
+      var after  = ta.value.substring(ta.selectionEnd);
+      var prefix = (before === '' || before.endsWith('\\n')) ? '' : '\\n';
+      var suffix = after.startsWith('\\n') ? '' : '\\n';
+      var inserted = prefix + snippet + suffix;
+      ta.value = before + inserted + after;
+      ta.selectionStart = ta.selectionEnd = start + inserted.length;
+      localStorage.setItem(DRAFT_KEY, ta.value);
+      draftBadge.hidden = false;
+      ta.focus();
+    }}
   }}
   document.getElementById('ts-img-inline').onclick = function() {{
-    copySnippet(this, '![이미지 설명](./assets/image.jpg)');
+    insertSnippet('![이미지 설명](./assets/image.jpg)');
   }};
   document.getElementById('ts-img-bg').onclick = function() {{
-    copySnippet(this, '![bg](./assets/bg.jpg)');
+    insertSnippet('![bg](./assets/bg.jpg)');
   }};
   document.getElementById('ts-img-split').onclick = function() {{
-    copySnippet(this, '![bg left:40%](./assets/left.jpg)');
+    insertSnippet('![bg left:40%](./assets/left.jpg)');
   }};
 }})();
 </script>"""
