@@ -223,6 +223,8 @@ def _build_switcher_html(active_theme: str, active_layout: str = "default", orig
     <div id="ts-grid"></div>
     <div class="ts-sh">📐 레이아웃</div>
     <div id="ts-layout-grid"></div>
+    <div class="ts-sh">🖼 배경 패턴</div>
+    <div id="ts-bg-grid"></div>
     <div class="ts-sh">🔡 글자 크기</div>
     <div id="ts-fs-row">
       <span class="ts-fs-lbl">14</span>
@@ -290,6 +292,15 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
 .ts-dot{{width:8px;height:8px;border-radius:50%;flex-shrink:0}}
 .ts-label{{font-size:.73rem;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
 #ts-layout-grid{{display:flex;gap:5px;margin-bottom:10px}}
+#ts-bg-grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:10px}}
+.ts-bg-item{{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px;
+  border-radius:7px;border:1px solid transparent;cursor:pointer;
+  background:rgba(255,255,255,.04);transition:all .15s;color:#ccc}}
+.ts-bg-item:hover{{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.14)}}
+.ts-bg-item.ts-active{{background:rgba(120,100,220,.25);border-color:rgba(150,130,255,.5);color:#fff}}
+.ts-bg-preview{{width:36px;height:24px;border-radius:4px;border:1px solid rgba(255,255,255,.15);
+  background-color:#444;flex-shrink:0}}
+.ts-bg-name{{font-size:.63rem;font-weight:600}}
 .ts-ly{{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
   padding:6px 4px;border-radius:7px;border:1px solid transparent;cursor:pointer;
   background:rgba(255,255,255,.04);transition:all .15s;color:#ccc}}
@@ -353,6 +364,19 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
 <script>
 (function(){{
   const THEMES = {themes_js};
+  const PATTERNS = {{
+    'none':     {{label:'없음',    preview:'background:none',        css:''}},
+    'dots':     {{label:'점무늬',  preview:'background-image:radial-gradient(circle,rgba(200,200,200,.7) 1.5px,transparent 1.5px);background-size:8px 8px;background-color:#444',
+                  css:'section{{background-image:radial-gradient(circle,rgba(127,127,127,.18) 1.5px,transparent 1.5px)!important;background-size:22px 22px!important}}'}},
+    'grid':     {{label:'격자',    preview:'background-image:linear-gradient(rgba(200,200,200,.5) 1px,transparent 1px),linear-gradient(90deg,rgba(200,200,200,.5) 1px,transparent 1px);background-size:8px 8px;background-color:#444',
+                  css:'section{{background-image:linear-gradient(rgba(127,127,127,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(127,127,127,.12) 1px,transparent 1px)!important;background-size:28px 28px!important}}'}},
+    'diagonal': {{label:'사선',    preview:'background-image:repeating-linear-gradient(45deg,rgba(200,200,200,.5) 0,rgba(200,200,200,.5) 1px,transparent 1px,transparent 7px);background-color:#444',
+                  css:'section{{background-image:repeating-linear-gradient(45deg,rgba(127,127,127,.12) 0,rgba(127,127,127,.12) 1px,transparent 1px,transparent 14px)!important}}'}},
+    'glow':     {{label:'글로우',  preview:'background-image:radial-gradient(ellipse 80% 70% at 0% 0%,rgba(150,100,255,.6) 0%,transparent 65%),radial-gradient(ellipse 70% 80% at 100% 100%,rgba(80,180,255,.5) 0%,transparent 65%);background-color:#1a1a2e',
+                  css:'section{{background-image:radial-gradient(ellipse 65% 55% at 0% 0%,rgba(255,255,255,.08) 0%,transparent 60%),radial-gradient(ellipse 55% 65% at 100% 100%,rgba(255,255,255,.08) 0%,transparent 60%)!important}}'}},
+    'circuit':  {{label:'회로망',  preview:'background-image:linear-gradient(rgba(200,200,200,.4) 1px,transparent 1px),linear-gradient(90deg,rgba(200,200,200,.4) 1px,transparent 1px),linear-gradient(rgba(200,200,200,.2) 1px,transparent 1px),linear-gradient(90deg,rgba(200,200,200,.2) 1px,transparent 1px);background-size:16px 16px,16px 16px,4px 4px,4px 4px;background-color:#444',
+                  css:'section{{background-image:linear-gradient(rgba(127,127,127,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(127,127,127,.1) 1px,transparent 1px),linear-gradient(rgba(127,127,127,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(127,127,127,.05) 1px,transparent 1px)!important;background-size:64px 64px,64px 64px,16px 16px,16px 16px!important}}'}},
+  }};
   const LAYOUTS = {{
     'default':{{label:'기본', desc:'32px',css:''}},
     'dense':  {{label:'Dense',desc:'24px',css:'section{{font-size:24px!important}}section h1{{font-size:56px!important}}section h2{{font-size:40px!important}}section h3{{font-size:32px!important}}section pre{{max-height:50vh!important;overflow-y:auto!important}}'}},
@@ -361,9 +385,10 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
   const LAYOUT_FS   = {{default:32,dense:24,wiki:20}};
   const INIT_THEME  = '{active_theme}';
   const INIT_LAYOUT = '{active_layout}';
-  let current       = INIT_THEME;
-  let currentLayout = INIT_LAYOUT;
-  let overrideEl    = null;
+  let current        = INIT_THEME;
+  let currentLayout  = INIT_LAYOUT;
+  let currentPattern = 'none';
+  let overrideEl     = null;
 
   function applyTheme(name) {{
     if (name === current) return;
@@ -390,6 +415,29 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
       fsSlider.value = fs; fsVal.textContent = fs + 'px';
     }}
     renderLayoutButtons();
+  }}
+
+  function applyPattern(name) {{
+    let el = document.getElementById('as-bg-css');
+    if (!el) {{ el = document.createElement('style'); el.id = 'as-bg-css'; document.head.appendChild(el); }}
+    const p = PATTERNS[name];
+    el.textContent = (p && p.css) ? p.css : '';
+    currentPattern = name;
+    localStorage.setItem('as-bg-pattern', name);
+    renderPatternButtons();
+  }}
+
+  function renderPatternButtons() {{
+    const grid = document.getElementById('ts-bg-grid');
+    grid.innerHTML = '';
+    Object.entries(PATTERNS).forEach(([key, p]) => {{
+      const el = document.createElement('div');
+      el.className = 'ts-bg-item' + (key === currentPattern ? ' ts-active' : '');
+      el.innerHTML = '<div class="ts-bg-preview" style="' + p.preview + '"></div>'
+                   + '<span class="ts-bg-name">' + p.label + '</span>';
+      el.onclick = () => applyPattern(key);
+      grid.appendChild(el);
+    }});
   }}
 
   const fsSlider = document.getElementById('ts-fontsize');
@@ -466,7 +514,7 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
   const panel = document.getElementById('ts-panel');
   btn.onclick = (e) => {{
     e.stopPropagation(); panel.hidden = !panel.hidden;
-    if (!panel.hidden) {{ renderThemeButtons(); renderLayoutButtons(); }}
+    if (!panel.hidden) {{ renderThemeButtons(); renderLayoutButtons(); renderPatternButtons(); }}
   }};
   document.addEventListener('click', () => {{ panel.hidden = true; }});
   panel.addEventListener('click', e => e.stopPropagation());
@@ -501,6 +549,8 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
   if (savedH === '0') headingBtn.click();
   const savedA = localStorage.getItem('as-align');
   if (savedA === 'center') alignBtn.click();
+  const savedBg = localStorage.getItem('as-bg-pattern');
+  if (savedBg && PATTERNS[savedBg]) applyPattern(savedBg);
 
   // ── MD 소스 에디터 ──────────────────────────────────────────────────────
   const drawer     = document.getElementById('ts-drawer');
