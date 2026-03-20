@@ -1097,6 +1097,7 @@ def generate_landing(seminars: list[dict], config: dict) -> None:
     <h1>{title}</h1>
     <p>{description}</p>
     <a class="theme-gallery-link" href="./themes/">🎨 테마 갤러리 →</a>
+    <a class="theme-gallery-link" href="./tools/theme-generator.html">🖌 테마 생성기 →</a>
   </div>
 </header>
 
@@ -1369,6 +1370,16 @@ def main() -> None:
 
     generate_landing(seminars, config)
     build_theme_gallery()
+
+    # Copy tools/ → dist/tools/
+    tools_src = ROOT / "tools"
+    if tools_src.exists():
+        tools_dst = DIST_DIR / "tools"
+        if tools_dst.exists():
+            shutil.rmtree(tools_dst)
+        shutil.copytree(tools_src, tools_dst)
+        print(f"           tools         → dist/tools/")
+
     print(f"\n✓ Done — {len(seminars)} built, landing page → dist/index.html")
     print(f"           theme gallery  → dist/themes/index.html")
 

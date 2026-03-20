@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>테마 생성기 — auto-seminar</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0c14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans-serif;min-height:100vh;padding:32px 24px}
+a{color:#a78bfa;text-decoration:none}
+a:hover{text-decoration:underline}
+
+header{max-width:900px;margin:0 auto 32px}
+header h1{font-size:1.6rem;font-weight:700;color:#a78bfa;margin-bottom:4px}
+header p{color:#64748b;font-size:.9rem}
+.back{display:inline-block;font-size:.82rem;margin-bottom:12px;color:#64748b}
+
+.container{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+
+/* ── Drop Zone ── */
+#drop-zone{border:2px dashed rgba(167,139,250,.35);border-radius:16px;
+  padding:60px 40px;text-align:center;cursor:pointer;
+  background:rgba(167,139,250,.03);transition:all .2s;position:relative}
+#drop-zone:hover,#drop-zone.drag-over{border-color:#a78bfa;background:rgba(167,139,250,.08)}
+#drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.dz-icon{font-size:2.8rem;margin-bottom:12px}
+.dz-title{font-size:1.1rem;font-weight:600;color:#c4b5fd;margin-bottom:6px}
+.dz-sub{font-size:.82rem;color:#64748b}
+.dz-types{display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.dz-type{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+  border-radius:6px;padding:3px 10px;font-size:.72rem;color:#94a3b8}
+
+/* ── Source info ── */
+#source-info{display:none;align-items:center;gap:12px;padding:12px 16px;
+  background:rgba(255,255,255,.04);border-radius:10px;border:1px solid rgba(255,255,255,.08)}
+.si-thumb{width:60px;height:40px;border-radius:6px;object-fit:cover;flex-shrink:0;
+  background:rgba(255,255,255,.08)}
+.si-name{font-size:.85rem;font-weight:600;color:#e2e8f0}
+.si-type{font-size:.72rem;color:#64748b}
+#si-reset{margin-left:auto;background:none;border:1px solid rgba(255,255,255,.12);
+  color:#94a3b8;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:.75rem}
+#si-reset:hover{background:rgba(255,255,255,.08);color:#fff}
+
+/* ── Color Palette ── */
+#palette-section{display:none}
+.section-title{font-size:.72rem;font-weight:700;color:rgba(255,255,255,.4);
+  text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+#palette-grid{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.swatch{width:52px;height:52px;border-radius:10px;border:2px solid rgba(255,255,255,.12);
+  cursor:pointer;transition:all .15s;position:relative;flex-shrink:0}
+.swatch:hover{transform:scale(1.08);border-color:rgba(255,255,255,.4)}
+.swatch.selected{border-color:#a78bfa;transform:scale(1.1);
+  box-shadow:0 0 0 3px rgba(167,139,250,.4)}
+.swatch-hex{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);
+  font-size:.6rem;color:#64748b;white-space:nowrap}
+
+/* ── Role assignment ── */
+#roles-section{display:none}
+.roles-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+.role-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;
+  transition:all .15s}
+.role-card:hover{background:rgba(255,255,255,.08)}
+.role-card.active{border-color:#a78bfa;background:rgba(167,139,250,.1)}
+.role-dot{width:28px;height:28px;border-radius:8px;flex-shrink:0;border:1px solid rgba(255,255,255,.15)}
+.role-info{flex:1;min-width:0}
+.role-name{font-size:.75rem;font-weight:600;color:#e2e8f0}
+.role-hex{font-size:.65rem;color:#64748b;font-family:monospace}
+.role-hint{font-size:.6rem;color:rgba(255,255,255,.25);margin-top:1px}
+#assign-hint{font-size:.75rem;color:#a78bfa;padding:8px 12px;
+  background:rgba(167,139,250,.1);border-radius:8px;margin-top:10px;display:none}
+
+/* ── Settings ── */
+#settings-section{display:none}
+.settings-row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:.72rem;font-weight:600;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.06em}
+.field input[type=text]{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+  border-radius:8px;padding:8px 12px;color:#e2e8f0;font-size:.9rem;outline:none;width:220px}
+.field input[type=text]:focus{border-color:#a78bfa}
+.mode-toggle{display:flex;gap:4px}
+.mode-btn{padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.04);color:#94a3b8;cursor:pointer;font-size:.82rem;transition:all .15s}
+.mode-btn.active{background:rgba(167,139,250,.25);border-color:#a78bfa;color:#c4b5fd}
+#gen-btn{padding:9px 24px;background:rgba(167,139,250,.3);border:none;border-radius:8px;
+  color:#c4b5fd;cursor:pointer;font-size:.88rem;font-weight:600;transition:background .2s}
+#gen-btn:hover{background:rgba(167,139,250,.5)}
+#gen-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* ── Preview + Download ── */
+#output-section{display:none}
+.output-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.output-header h3{font-size:.85rem;font-weight:600;color:#c4b5fd;flex:1}
+#dl-btn{padding:8px 20px;background:rgba(100,200,100,.25);border:1px solid rgba(100,200,100,.4);
+  border-radius:8px;color:#86efac;cursor:pointer;font-size:.82rem;font-weight:600;transition:all .2s}
+#dl-btn:hover{background:rgba(100,200,100,.4)}
+#css-preview{width:100%;height:380px;background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:16px;
+  color:#94a3b8;font-family:'JetBrains Mono',Consolas,monospace;font-size:.75rem;
+  line-height:1.6;resize:vertical;outline:none;tab-size:2}
+.preview-bar{display:flex;gap:10px;margin-top:12px;padding:12px;
+  border-radius:10px;border:1px solid rgba(255,255,255,.08)}
+.prev-slide{border-radius:8px;padding:16px 20px;min-width:260px;flex-shrink:0}
+.prev-h1{font-size:1.3em;font-weight:700;margin-bottom:6px}
+.prev-h2{font-size:1em;font-weight:600;margin-bottom:4px}
+.prev-h3{font-size:.85em;font-weight:600;margin-bottom:8px}
+.prev-p{font-size:.75em;margin-bottom:6px}
+.prev-code{font-family:monospace;font-size:.7em;padding:2px 6px;border-radius:3px}
+.prev-label{font-size:.68rem;color:#64748b;align-self:flex-start;margin-top:4px}
+
+.instructions{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);
+  border-radius:10px;padding:16px;font-size:.8rem;color:#94a3b8;line-height:1.8}
+.instructions strong{color:#c4b5fd}
+.instructions code{background:rgba(255,255,255,.08);border-radius:4px;padding:1px 6px;
+  font-family:monospace;font-size:.85em;color:#a78bfa}
+</style>
+</head>
+<body>
+<header>
+  <a class="back" href="../">← 랜딩 페이지로</a>
+  <h1>🎨 테마 생성기</h1>
+  <p>이미지나 PowerPoint 파일에서 색상을 추출해 Marp 테마 CSS를 자동 생성합니다.</p>
+</header>
+
+<div class="container">
+
+  <!-- Drop Zone -->
+  <div id="drop-zone">
+    <input type="file" id="file-input" accept="image/*,.pptx,.ppt">
+    <div class="dz-icon">🖼</div>
+    <div class="dz-title">파일을 드래그하거나 클릭해서 선택</div>
+    <div class="dz-sub">이미지 또는 PowerPoint 파일 (.pptx)</div>
+    <div class="dz-types">
+      <span class="dz-type">JPG</span>
+      <span class="dz-type">PNG</span>
+      <span class="dz-type">SVG</span>
+      <span class="dz-type">WEBP</span>
+      <span class="dz-type">PPTX</span>
+    </div>
+  </div>
+
+  <!-- Source Info -->
+  <div id="source-info">
+    <canvas class="si-thumb" id="si-thumb" width="60" height="40"></canvas>
+    <div>
+      <div class="si-name" id="si-name"></div>
+      <div class="si-type" id="si-type"></div>
+    </div>
+    <button id="si-reset">✕ 초기화</button>
+  </div>
+
+  <!-- Palette -->
+  <div id="palette-section">
+    <div class="section-title">추출된 색상 팔레트</div>
+    <div id="palette-grid"></div>
+    <div style="height:28px"></div>
+  </div>
+
+  <!-- Role Assignment -->
+  <div id="roles-section">
+    <div class="section-title">색상 역할 할당 <span style="color:#64748b;font-size:.9em;text-transform:none;letter-spacing:0">(클릭해서 변경)</span></div>
+    <div class="roles-grid" id="roles-grid"></div>
+    <div id="assign-hint"></div>
+  </div>
+
+  <!-- Settings -->
+  <div id="settings-section">
+    <div class="section-title">테마 설정</div>
+    <div class="settings-row">
+      <div class="field">
+        <label>테마 이름</label>
+        <input type="text" id="theme-name" placeholder="my-theme" value="my-theme">
+      </div>
+      <div class="field">
+        <label>모드</label>
+        <div class="mode-toggle">
+          <button class="mode-btn active" id="mode-dark" onclick="setMode('dark')">🌙 다크</button>
+          <button class="mode-btn" id="mode-light" onclick="setMode('light')">☀️ 라이트</button>
+        </div>
+      </div>
+      <button id="gen-btn" onclick="generateCSS()">CSS 생성 →</button>
+    </div>
+  </div>
+
+  <!-- Output -->
+  <div id="output-section">
+    <div class="output-header">
+      <h3>📄 생성된 CSS</h3>
+      <button id="dl-btn" onclick="downloadCSS()">💾 .css 다운로드</button>
+    </div>
+    <textarea id="css-preview" spellcheck="false"></textarea>
+    <div class="preview-bar">
+      <div class="prev-slide" id="live-preview">
+        <div class="prev-h1" id="pv-h1">슬라이드 제목</div>
+        <div class="prev-h2" id="pv-h2">## 섹션 제목</div>
+        <div class="prev-h3" id="pv-h3">### 하위 제목</div>
+        <div class="prev-p" id="pv-p">본문 텍스트 내용이 들어가는 부분입니다.</div>
+        <span class="prev-code" id="pv-code">inline code</span>
+      </div>
+      <div class="prev-label">← 미리보기</div>
+    </div>
+  </div>
+
+  <!-- Instructions -->
+  <div class="instructions">
+    <strong>사용 방법</strong><br>
+    1. 이미지 또는 PPTX 파일을 업로드하면 색상이 자동 추출됩니다.<br>
+    2. 각 색상의 역할(배경, 제목 등)을 클릭해서 조정할 수 있습니다.<br>
+    3. 테마 이름 입력 후 <strong>CSS 생성</strong> → <strong>.css 다운로드</strong>.<br>
+    4. 다운로드한 파일을 <code>themes/</code> 폴더에 넣고 push하면 자동으로 테마 목록에 추가됩니다.<br>
+    5. 특정 슬라이드에 적용: frontmatter에 <code>seminar_theme: 테마이름</code> 추가.
+  </div>
+
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────
+// State
+// ─────────────────────────────────────────────────────────────────
+let extracted = [];   // hex colors from image/pptx
+let roles = {         // role → hex
+  bg: null, text: null, surface: null,
+  h1: null, h2: null, h3: null,
+  accent: null, muted: null,
+};
+let mode = 'dark';
+let pendingRole = null;  // role waiting for color assignment
+
+const ROLE_META = {
+  bg:      { name: '배경',      hint: '슬라이드 배경색' },
+  text:    { name: '본문 텍스트', hint: '일반 텍스트 색상' },
+  surface: { name: '표면',      hint: '코드블록·테이블 배경' },
+  h1:      { name: 'H1 제목',   hint: '# 제목 색상' },
+  h2:      { name: 'H2 제목',   hint: '## 섹션 제목 색상' },
+  h3:      { name: 'H3 제목',   hint: '### 하위 제목 색상' },
+  accent:  { name: '강조',      hint: '링크·bullet·strong' },
+  muted:   { name: '보조',      hint: '페이지번호·설명' },
+};
+
+// ─────────────────────────────────────────────────────────────────
+// Color utils
+// ─────────────────────────────────────────────────────────────────
+function hexToRgb(hex) {
+  const h = hex.replace('#','');
+  return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+}
+function rgbToHex(r,g,b) {
+  return '#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+function luminance([r,g,b]) {
+  return [r,g,b].map(c=>{c/=255;return c<=0.03928?c/12.92:((c+0.055)/1.055)**2.4})
+    .reduce((s,c,i)=>s+[0.2126,0.7152,0.0722][i]*c, 0);
+}
+function colorDist([r1,g1,b1],[r2,g2,b2]) {
+  return Math.sqrt((r1-r2)**2+(g1-g2)**2+(b1-b2)**2);
+}
+function lightenHex(hex, pct) {
+  const [r,g,b] = hexToRgb(hex);
+  return rgbToHex(...[r,g,b].map(c=>Math.min(255,Math.round(c+(255-c)*pct/100))));
+}
+function darkenHex(hex, pct) {
+  const [r,g,b] = hexToRgb(hex);
+  return rgbToHex(...[r,g,b].map(c=>Math.max(0,Math.round(c*(1-pct/100)))));
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Image color extraction (Canvas API)
+// ─────────────────────────────────────────────────────────────────
+function extractFromImage(imgEl, numColors=8) {
+  const canvas = document.createElement('canvas');
+  const SZ = 120;
+  canvas.width = canvas.height = SZ;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(imgEl, 0, 0, SZ, SZ);
+  const data = ctx.getImageData(0, 0, SZ, SZ).data;
+
+  const buckets = {};
+  for (let i = 0; i < data.length; i += 4) {
+    if (data[i+3] < 128) continue;
+    const r = Math.round(data[i]   / 24) * 24;
+    const g = Math.round(data[i+1] / 24) * 24;
+    const b = Math.round(data[i+2] / 24) * 24;
+    const k = r+','+g+','+b;
+    buckets[k] = (buckets[k]||0) + 1;
+  }
+
+  const sorted = Object.entries(buckets)
+    .sort((a,b) => b[1]-a[1])
+    .map(([k]) => k.split(',').map(Number));
+
+  const result = [];
+  for (const color of sorted) {
+    if (result.length >= numColors) break;
+    if (!result.some(c => colorDist(c, color) < 60)) result.push(color);
+  }
+  return result.map(([r,g,b]) => rgbToHex(r,g,b));
+}
+
+// ─────────────────────────────────────────────────────────────────
+// PPTX color extraction (ZIP binary parser + DOMParser)
+// No external deps — uses DecompressionStream (supported Chrome80+, FF113+, Safari16.4+)
+// ─────────────────────────────────────────────────────────────────
+async function extractFromPptx(buffer) {
+  const view = new DataView(buffer);
+  const bytes = new Uint8Array(buffer);
+
+  // Find End of Central Directory (signature 0x06054b50)
+  let eocd = -1;
+  for (let i = buffer.byteLength - 22; i >= 0; i--) {
+    if (view.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  }
+  if (eocd === -1) throw new Error('ZIP 구조를 찾을 수 없습니다. 유효한 PPTX 파일인지 확인하세요.');
+
+  const cdOffset = view.getUint32(eocd + 16, true);
+  const cdCount  = view.getUint16(eocd + 8, true);
+
+  // Read central directory
+  const files = {};
+  let pos = cdOffset;
+  for (let i = 0; i < cdCount; i++) {
+    if (view.getUint32(pos, true) !== 0x02014b50) break;
+    const method   = view.getUint16(pos + 10, true);
+    const cSize    = view.getUint32(pos + 20, true);
+    const fnLen    = view.getUint16(pos + 28, true);
+    const extraLen = view.getUint16(pos + 30, true);
+    const cmtLen   = view.getUint16(pos + 32, true);
+    const localOff = view.getUint32(pos + 42, true);
+    const name = new TextDecoder().decode(bytes.slice(pos+46, pos+46+fnLen));
+    files[name] = { localOff, method, cSize };
+    pos += 46 + fnLen + extraLen + cmtLen;
+  }
+
+  // Find theme XML (try theme1 first, fall back to others)
+  const themeFile = files['ppt/theme/theme1.xml']
+    || Object.entries(files).find(([k]) => k.match(/^ppt\/theme\/theme\d+\.xml$/))?.[1];
+  if (!themeFile) throw new Error('PPTX에서 테마 파일을 찾을 수 없습니다.');
+
+  // Read local file entry
+  const lp = themeFile.localOff;
+  const lfnLen   = view.getUint16(lp + 26, true);
+  const lextraLen= view.getUint16(lp + 28, true);
+  const dataStart= lp + 30 + lfnLen + lextraLen;
+  const compData = bytes.slice(dataStart, dataStart + themeFile.cSize);
+
+  let xml;
+  if (themeFile.method === 0) {
+    xml = new TextDecoder().decode(compData);
+  } else if (themeFile.method === 8) {
+    if (!('DecompressionStream' in window)) throw new Error('이 브라우저는 DecompressionStream을 지원하지 않습니다.');
+    const ds = new DecompressionStream('deflate-raw');
+    const w = ds.writable.getWriter(); w.write(compData); w.close();
+    const chunks = []; const reader = ds.readable.getReader();
+    while (true) { const {done,value} = await reader.read(); if (done) break; chunks.push(value); }
+    const total = chunks.reduce((s,c)=>s+c.length,0);
+    const out = new Uint8Array(total); let off = 0;
+    for (const c of chunks) { out.set(c,off); off+=c.length; }
+    xml = new TextDecoder().decode(out);
+  } else throw new Error('지원하지 않는 압축 방식: ' + themeFile.method);
+
+  // Parse XML colors
+  const doc = new DOMParser().parseFromString(xml, 'text/xml');
+  function getColor(tag) {
+    const el = doc.querySelector(tag);
+    if (!el) return null;
+    const srgb = el.querySelector('srgbClr');
+    if (srgb) return '#' + srgb.getAttribute('val').toLowerCase();
+    const sys = el.querySelector('sysClr');
+    if (sys) return '#' + (sys.getAttribute('lastClr') || '000000').toLowerCase();
+    return null;
+  }
+
+  const pptColors = {
+    dk1: getColor('dk1'), lt1: getColor('lt1'),
+    dk2: getColor('dk2'), lt2: getColor('lt2'),
+    accent1: getColor('accent1'), accent2: getColor('accent2'),
+    accent3: getColor('accent3'), accent4: getColor('accent4'),
+    accent5: getColor('accent5'), accent6: getColor('accent6'),
+  };
+
+  // Return ordered: light colors first (for light mode), darks last
+  const all = Object.values(pptColors).filter(Boolean);
+  return [...new Set(all)]; // deduplicate
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Auto-assign roles based on mode and luminance
+// ─────────────────────────────────────────────────────────────────
+function autoAssignRoles(colors, isDarkMode) {
+  const sorted = [...colors].sort((a,b) => luminance(hexToRgb(a)) - luminance(hexToRgb(b)));
+  // sorted[0] = darkest, sorted[last] = lightest
+
+  if (isDarkMode) {
+    const bg      = sorted[0] || '#0d1117';
+    const text    = sorted[sorted.length-1] || '#e2e8f0';
+    const accents = sorted.slice(1, sorted.length-1);
+    return {
+      bg,
+      text,
+      surface:  accents[0] ? darkenHex(accents[0], 30) : lightenHex(bg, 15),
+      h1:       accents[0] || lightenHex(bg, 50),
+      h2:       accents[1] || lightenHex(bg, 40),
+      h3:       accents[2] || lightenHex(bg, 30),
+      accent:   accents[0] || '#a78bfa',
+      muted:    accents[accents.length-1] ? darkenHex(accents[accents.length-1], 10) : '#64748b',
+    };
+  } else {
+    const bg      = sorted[sorted.length-1] || '#ffffff';
+    const text    = sorted[0] || '#1e1e1e';
+    const accents = sorted.slice(1, sorted.length-1).reverse();
+    return {
+      bg,
+      text,
+      surface:  accents[0] ? lightenHex(accents[0], 30) : darkenHex(bg, 5),
+      h1:       accents[0] || darkenHex(bg, 60),
+      h2:       accents[1] || darkenHex(bg, 45),
+      h3:       accents[2] || darkenHex(bg, 30),
+      accent:   accents[0] || '#6366f1',
+      muted:    accents[accents.length-1] || '#6b7280',
+    };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// CSS Template Generator
+// ─────────────────────────────────────────────────────────────────
+function buildCSS(name, r) {
+  const darkBg = luminance(hexToRgb(r.bg)) < 0.3;
+  const codeFg = darkBg ? lightenHex(r.bg, 70) : darkenHex(r.bg, 60);
+  const codeBg = darkBg ? lightenHex(r.bg, 8)  : darkenHex(r.bg, 5);
+  const tblHead= darkBg ? lightenHex(r.bg, 10) : darkenHex(r.bg, 6);
+  const hrColor= darkBg ? lightenHex(r.bg, 15) : darkenHex(r.bg, 12);
+  const bqBg   = darkBg ? lightenHex(r.bg, 6)  : darkenHex(r.bg, 4);
+  const tdBdr  = darkBg ? lightenHex(r.bg, 12) : darkenHex(r.bg, 8);
+
+  return `/* @theme ${name} */
+
+/*
+ * ${name} — 테마 생성기로 자동 생성
+ * auto-seminar theme generator: https://github.com/keepittrill/auto-seminar
+ */
+
+section {
+  background: ${r.bg};
+  color: ${r.text};
+  font-family: 'Noto Sans CJK KR', 'Noto Sans KR', -apple-system, BlinkMacSystemFont,
+               'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+  font-size: 20px;
+  padding: 60px 80px;
+  line-height: 1.65;
+  width: 1280px;
+  height: 720px;
+}
+
+section h1 {
+  color: ${r.h1};
+  font-size: 2.4em;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin-bottom: 0.4em;
+  padding-bottom: 0.3em;
+  border-bottom: 3px solid ${hrColor};
+}
+
+section h2 {
+  color: ${r.h2};
+  font-size: 1.6em;
+  font-weight: 700;
+  margin-bottom: 0.35em;
+  padding-bottom: 0.2em;
+  border-bottom: 1.5px solid ${hrColor};
+}
+
+section h3 {
+  color: ${r.h3};
+  font-size: 1.2em;
+  font-weight: 700;
+  margin-bottom: 0.3em;
+}
+
+section h4 {
+  color: ${r.h3};
+  font-size: 1.05em;
+  font-weight: 700;
+  margin-bottom: 0.25em;
+}
+
+section h5, section h6 {
+  color: ${r.muted};
+  font-size: 0.95em;
+  font-weight: 600;
+  margin-bottom: 0.2em;
+}
+
+section p {
+  line-height: 1.7;
+  margin-bottom: 0.75em;
+}
+
+section ul, section ol {
+  padding-left: 1.6em;
+  line-height: 1.8;
+}
+
+section li {
+  margin-bottom: 0.35em;
+}
+
+section li::marker {
+  color: ${r.accent};
+}
+
+section strong {
+  color: ${r.h1};
+  font-weight: 700;
+}
+
+section em {
+  color: ${r.h2};
+  font-style: italic;
+}
+
+section code {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.82em;
+  background: ${codeBg};
+  color: ${codeFg};
+  border: 1px solid ${hrColor};
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+section pre {
+  background: ${codeBg};
+  border-left: 4px solid ${r.accent};
+  border-radius: 6px;
+  padding: 0.9em 1.1em;
+  margin: 0.5em 0;
+}
+
+section pre code {
+  background: none;
+  color: ${codeFg};
+  border: none;
+  padding: 0;
+  font-size: 0.78em;
+  line-height: 1.55;
+}
+
+section blockquote {
+  border-left: 4px solid ${r.accent};
+  background: ${bqBg};
+  color: ${r.muted};
+  padding: 0.6em 1.1em;
+  margin: 0.8em 0;
+  border-radius: 0 6px 6px 0;
+  font-style: italic;
+}
+
+section table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.83em;
+  margin-bottom: 0.8em;
+}
+
+section th {
+  background: ${tblHead};
+  color: ${r.h2};
+  padding: 8px 14px;
+  font-weight: 700;
+  text-align: left;
+  border-bottom: 2px solid ${r.accent};
+}
+
+section td {
+  padding: 7px 14px;
+  border-bottom: 1px solid ${tdBdr};
+  color: ${r.text};
+}
+
+section tr:nth-child(even) td {
+  background: ${darkBg ? lightenHex(r.bg,4) : darkenHex(r.bg,3)};
+}
+
+section a {
+  color: ${r.accent};
+  text-decoration: none;
+  border-bottom: 1px solid ${r.accent}55;
+}
+
+section hr {
+  border: none;
+  border-top: 1.5px solid ${hrColor};
+  margin: 0.8em 0;
+}
+
+section header, section footer {
+  color: ${r.muted};
+  font-size: 0.65em;
+}
+
+section::after {
+  color: ${r.muted};
+  font-size: 0.65em;
+}
+`;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// UI State management
+// ─────────────────────────────────────────────────────────────────
+function setMode(m) {
+  mode = m;
+  document.getElementById('mode-dark').classList.toggle('active', m==='dark');
+  document.getElementById('mode-light').classList.toggle('active', m==='light');
+  if (extracted.length) {
+    Object.assign(roles, autoAssignRoles(extracted, m==='dark'));
+    renderRoles();
+    renderSwatches();
+  }
+}
+
+function renderSwatches() {
+  const grid = document.getElementById('palette-grid');
+  grid.innerHTML = '';
+  extracted.forEach((hex, i) => {
+    const div = document.createElement('div');
+    div.className = 'swatch';
+    div.style.background = hex;
+    div.title = hex;
+    if (pendingRole) div.classList.add('selectable');
+    const span = document.createElement('span');
+    span.className = 'swatch-hex';
+    span.textContent = hex;
+    div.appendChild(span);
+    div.onclick = () => {
+      if (pendingRole) {
+        roles[pendingRole] = hex;
+        pendingRole = null;
+        document.getElementById('assign-hint').style.display = 'none';
+        renderSwatches();
+        renderRoles();
+      }
+    };
+    grid.appendChild(div);
+  });
+}
+
+function renderRoles() {
+  const grid = document.getElementById('roles-grid');
+  grid.innerHTML = '';
+  Object.entries(ROLE_META).forEach(([key, meta]) => {
+    const color = roles[key] || '#888888';
+    const div = document.createElement('div');
+    div.className = 'role-card' + (pendingRole===key ? ' active' : '');
+    div.innerHTML = `<div class="role-dot" style="background:${color}"></div>
+      <div class="role-info">
+        <div class="role-name">${meta.name}</div>
+        <div class="role-hex">${color}</div>
+        <div class="role-hint">${meta.hint}</div>
+      </div>`;
+    div.onclick = () => {
+      if (pendingRole === key) {
+        pendingRole = null;
+        document.getElementById('assign-hint').style.display = 'none';
+      } else {
+        pendingRole = key;
+        const hint = document.getElementById('assign-hint');
+        hint.textContent = `위 팔레트에서 "${meta.name}" 색상을 클릭하세요`;
+        hint.style.display = 'block';
+      }
+      renderRoles();
+    };
+    grid.appendChild(div);
+  });
+}
+
+function showSections(visible) {
+  ['source-info','palette-section','roles-section','settings-section'].forEach(id => {
+    document.getElementById(id).style.display = visible ? (id==='source-info'?'flex':'block') : 'none';
+  });
+}
+
+function updateLivePreview() {
+  const pv = document.getElementById('live-preview');
+  pv.style.background = roles.bg || '#0d1117';
+  document.getElementById('pv-h1').style.color = roles.h1 || '#fff';
+  document.getElementById('pv-h2').style.color = roles.h2 || '#ccc';
+  document.getElementById('pv-h3').style.color = roles.h3 || '#aaa';
+  document.getElementById('pv-p').style.color  = roles.text || '#ddd';
+  const code = document.getElementById('pv-code');
+  const darkBg = luminance(hexToRgb(roles.bg||'#000')) < 0.3;
+  code.style.background = darkBg ? lightenHex(roles.bg||'#000',10) : darkenHex(roles.bg||'#fff',6);
+  code.style.color = darkBg ? lightenHex(roles.bg||'#000',60) : darkenHex(roles.bg||'#fff',50);
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Generate & Download
+// ─────────────────────────────────────────────────────────────────
+function generateCSS() {
+  const name = document.getElementById('theme-name').value.trim().replace(/[^a-z0-9_-]/gi,'-') || 'my-theme';
+  const css = buildCSS(name, roles);
+  document.getElementById('css-preview').value = css;
+  document.getElementById('output-section').style.display = 'block';
+  document.getElementById('dl-btn').dataset.name = name;
+  updateLivePreview();
+  document.getElementById('output-section').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function downloadCSS() {
+  const name = document.getElementById('dl-btn').dataset.name || 'my-theme';
+  const css = document.getElementById('css-preview').value;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([css], {type:'text/css'}));
+  a.download = name + '.css';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ─────────────────────────────────────────────────────────────────
+// File handling
+// ─────────────────────────────────────────────────────────────────
+async function handleFile(file) {
+  document.getElementById('output-section').style.display = 'none';
+  document.getElementById('si-name').textContent = file.name;
+
+  const isImage = file.type.startsWith('image/') || /\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(file.name);
+  const isPptx  = /\.pptx?$/i.test(file.name);
+
+  if (!isImage && !isPptx) {
+    alert('지원하지 않는 파일 형식입니다.\n이미지(JPG, PNG, SVG, WEBP) 또는 PPTX 파일을 사용해주세요.');
+    return;
+  }
+
+  document.getElementById('si-type').textContent = isPptx ? 'PowerPoint 파일' : '이미지 파일';
+  showSections(true);
+
+  if (isImage) {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      // Draw thumbnail
+      const thumb = document.getElementById('si-thumb');
+      const ctx = thumb.getContext('2d');
+      ctx.drawImage(img, 0, 0, 60, 40);
+      // Extract colors
+      extracted = extractFromImage(img, 8);
+      URL.revokeObjectURL(url);
+      Object.assign(roles, autoAssignRoles(extracted, mode==='dark'));
+      renderSwatches();
+      renderRoles();
+    };
+    img.src = url;
+  } else {
+    // PPTX - draw file icon as thumb
+    const thumb = document.getElementById('si-thumb');
+    const ctx = thumb.getContext('2d');
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(0,0,60,40);
+    ctx.fillStyle = '#c2410c';
+    ctx.font = 'bold 10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('PPTX', 30, 24);
+
+    try {
+      const buf = await file.arrayBuffer();
+      extracted = await extractFromPptx(buf);
+      if (!extracted.length) throw new Error('색상을 추출할 수 없습니다.');
+      Object.assign(roles, autoAssignRoles(extracted, mode==='dark'));
+      renderSwatches();
+      renderRoles();
+    } catch(e) {
+      alert('PPTX 파싱 오류: ' + e.message);
+      showSections(false);
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Event listeners
+// ─────────────────────────────────────────────────────────────────
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+
+fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+
+document.getElementById('si-reset').onclick = () => {
+  extracted = []; roles = {bg:null,text:null,surface:null,h1:null,h2:null,h3:null,accent:null,muted:null};
+  pendingRole = null; showSections(false);
+  document.getElementById('output-section').style.display = 'none';
+  fileInput.value = '';
+};
+
+// css-preview manual edit → update live preview
+document.getElementById('css-preview').addEventListener('input', () => {
+  // parse bg/text/h1 from edited CSS for live preview
+  const css = document.getElementById('css-preview').value;
+  const bgM = css.match(/background:\s*(#[0-9a-f]{6})/i);
+  if (bgM) { roles.bg = bgM[1]; updateLivePreview(); }
+});
+</script>
+</body>
+</html>
