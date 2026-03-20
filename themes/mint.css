@@ -1,0 +1,197 @@
+/* @theme mint */
+
+/*
+ * Mint — Fresh Green Light
+ * Crisp mint-white canvas with emerald and teal accents.
+ * Clean and refreshing — ideal for health, nature, or tech topics.
+ */
+
+:root {
+  --mt-bg:      #f0fdf4;
+  --mt-bg2:     #dcfce7;
+  --mt-surface: #bbf7d0;
+  --mt-text:    #052e16;
+  --mt-muted:   #4b7c5f;
+  --mt-emerald: #15803d;
+  --mt-green:   #16a34a;
+  --mt-teal:    #0d9488;
+  --mt-lime:    #4ade80;
+  --mt-light:   #86efac;
+}
+
+section {
+  background: var(--mt-bg);
+  color: var(--mt-text);
+  font-family: 'Noto Sans CJK KR', 'Noto Sans KR', -apple-system, BlinkMacSystemFont,
+               'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+  font-size: 20px;
+  padding: 60px 80px;
+  line-height: 1.65;
+  width: 1280px;
+  height: 720px;
+}
+
+section h1 {
+  color: var(--mt-emerald);
+  font-size: 2.4em;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin-bottom: 0.4em;
+  padding-bottom: 0.3em;
+  border-bottom: 3px solid var(--mt-surface);
+}
+
+section h2 {
+  color: var(--mt-green);
+  font-size: 1.6em;
+  font-weight: 700;
+  margin-bottom: 0.35em;
+  padding-bottom: 0.2em;
+  border-bottom: 2px solid var(--mt-bg2);
+}
+
+section h3 {
+  color: var(--mt-teal);
+  font-size: 1.2em;
+  font-weight: 700;
+  margin-bottom: 0.3em;
+}
+
+section h4 {
+  color: var(--mt-green);
+  font-size: 1.05em;
+  font-weight: 700;
+  margin-bottom: 0.25em;
+}
+
+section h5 {
+  color: var(--mt-muted);
+  font-size: 0.95em;
+  font-weight: 600;
+  margin-bottom: 0.2em;
+}
+
+section h6 {
+  color: var(--mt-muted);
+  font-size: 0.88em;
+  font-weight: 600;
+  font-style: italic;
+  margin-bottom: 0.15em;
+}
+
+section p {
+  line-height: 1.7;
+  margin-bottom: 0.75em;
+}
+
+section ul,
+section ol {
+  padding-left: 1.6em;
+  line-height: 1.8;
+}
+
+section li {
+  margin-bottom: 0.35em;
+}
+
+section li::marker {
+  color: var(--mt-lime);
+}
+
+section strong {
+  color: var(--mt-emerald);
+  font-weight: 700;
+}
+
+section em {
+  color: var(--mt-teal);
+  font-style: italic;
+}
+
+section code {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.82em;
+  background: var(--mt-bg2);
+  color: var(--mt-emerald);
+  border: 1px solid var(--mt-surface);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+section pre {
+  background: #052e16;
+  color: #d1fae5;
+  border-radius: 6px;
+  padding: 0.9em 1.1em;
+  margin: 0.5em 0;
+  border-left: 4px solid var(--mt-lime);
+}
+
+section pre code {
+  background: none;
+  color: #d1fae5;
+  border: none;
+  padding: 0;
+  font-size: 0.78em;
+  line-height: 1.55;
+}
+
+section blockquote {
+  border-left: 4px solid var(--mt-light);
+  background: var(--mt-bg2);
+  color: var(--mt-emerald);
+  padding: 0.6em 1.1em;
+  margin: 0.8em 0;
+  border-radius: 0 6px 6px 0;
+  font-style: italic;
+}
+
+section table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.83em;
+  margin-bottom: 0.8em;
+}
+
+section th {
+  background: var(--mt-surface);
+  color: var(--mt-emerald);
+  padding: 8px 14px;
+  font-weight: 700;
+  text-align: left;
+  border-bottom: 2px solid var(--mt-lime);
+}
+
+section td {
+  padding: 7px 14px;
+  border-bottom: 1px solid var(--mt-bg2);
+  color: var(--mt-text);
+}
+
+section tr:nth-child(even) td {
+  background: rgba(220, 252, 231, 0.7);
+}
+
+section a {
+  color: var(--mt-teal);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(13, 148, 136, 0.3);
+}
+
+section hr {
+  border: none;
+  border-top: 2px solid var(--mt-surface);
+  margin: 0.8em 0;
+}
+
+section header,
+section footer {
+  color: var(--mt-muted);
+  font-size: 0.65em;
+}
+
+section::after {
+  color: var(--mt-muted);
+  font-size: 0.65em;
+}

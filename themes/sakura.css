@@ -1,0 +1,197 @@
+/* @theme sakura */
+
+/*
+ * Sakura — Cherry Blossom Pink
+ * Soft rose-white canvas with warm pink and crimson accents.
+ * Gentle and warm — distinct from pastel's purple tones.
+ */
+
+:root {
+  --sk-bg:      #fff0f3;
+  --sk-bg2:     #ffe4e8;
+  --sk-surface: #fecdd3;
+  --sk-text:    #1a0a0e;
+  --sk-muted:   #9f6872;
+  --sk-crimson: #be123c;
+  --sk-rose:    #e11d48;
+  --sk-pink:    #f43f5e;
+  --sk-blush:   #fb7185;
+  --sk-light:   #fda4af;
+}
+
+section {
+  background: var(--sk-bg);
+  color: var(--sk-text);
+  font-family: 'Noto Sans CJK KR', 'Noto Sans KR', -apple-system, BlinkMacSystemFont,
+               'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+  font-size: 20px;
+  padding: 60px 80px;
+  line-height: 1.65;
+  width: 1280px;
+  height: 720px;
+}
+
+section h1 {
+  color: var(--sk-crimson);
+  font-size: 2.4em;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin-bottom: 0.4em;
+  padding-bottom: 0.3em;
+  border-bottom: 3px solid var(--sk-surface);
+}
+
+section h2 {
+  color: var(--sk-rose);
+  font-size: 1.6em;
+  font-weight: 700;
+  margin-bottom: 0.35em;
+  padding-bottom: 0.2em;
+  border-bottom: 2px solid var(--sk-bg2);
+}
+
+section h3 {
+  color: var(--sk-pink);
+  font-size: 1.2em;
+  font-weight: 700;
+  margin-bottom: 0.3em;
+}
+
+section h4 {
+  color: var(--sk-blush);
+  font-size: 1.05em;
+  font-weight: 700;
+  margin-bottom: 0.25em;
+}
+
+section h5 {
+  color: var(--sk-muted);
+  font-size: 0.95em;
+  font-weight: 600;
+  margin-bottom: 0.2em;
+}
+
+section h6 {
+  color: var(--sk-muted);
+  font-size: 0.88em;
+  font-weight: 600;
+  font-style: italic;
+  margin-bottom: 0.15em;
+}
+
+section p {
+  line-height: 1.7;
+  margin-bottom: 0.75em;
+}
+
+section ul,
+section ol {
+  padding-left: 1.6em;
+  line-height: 1.8;
+}
+
+section li {
+  margin-bottom: 0.35em;
+}
+
+section li::marker {
+  color: var(--sk-blush);
+}
+
+section strong {
+  color: var(--sk-crimson);
+  font-weight: 700;
+}
+
+section em {
+  color: var(--sk-rose);
+  font-style: italic;
+}
+
+section code {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.82em;
+  background: var(--sk-bg2);
+  color: var(--sk-crimson);
+  border: 1px solid var(--sk-surface);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+section pre {
+  background: #1a0a0e;
+  color: #fecdd3;
+  border-radius: 6px;
+  padding: 0.9em 1.1em;
+  margin: 0.5em 0;
+  border-left: 4px solid var(--sk-pink);
+}
+
+section pre code {
+  background: none;
+  color: #fecdd3;
+  border: none;
+  padding: 0;
+  font-size: 0.78em;
+  line-height: 1.55;
+}
+
+section blockquote {
+  border-left: 4px solid var(--sk-light);
+  background: var(--sk-bg2);
+  color: var(--sk-crimson);
+  padding: 0.6em 1.1em;
+  margin: 0.8em 0;
+  border-radius: 0 6px 6px 0;
+  font-style: italic;
+}
+
+section table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.83em;
+  margin-bottom: 0.8em;
+}
+
+section th {
+  background: var(--sk-surface);
+  color: var(--sk-crimson);
+  padding: 8px 14px;
+  font-weight: 700;
+  text-align: left;
+  border-bottom: 2px solid var(--sk-blush);
+}
+
+section td {
+  padding: 7px 14px;
+  border-bottom: 1px solid var(--sk-bg2);
+  color: var(--sk-text);
+}
+
+section tr:nth-child(even) td {
+  background: rgba(254, 228, 232, 0.6);
+}
+
+section a {
+  color: var(--sk-rose);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(225, 29, 72, 0.3);
+}
+
+section hr {
+  border: none;
+  border-top: 2px solid var(--sk-surface);
+  margin: 0.8em 0;
+}
+
+section header,
+section footer {
+  color: var(--sk-muted);
+  font-size: 0.65em;
+}
+
+section::after {
+  color: var(--sk-muted);
+  font-size: 0.65em;
+}

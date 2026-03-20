@@ -1,0 +1,197 @@
+/* @theme sunshine */
+
+/*
+ * Sunshine — Warm Amber & Yellow
+ * Bright, energetic canvas. Amber headings on cream-yellow.
+ * Great for workshops, creative sessions, and upbeat content.
+ */
+
+:root {
+  --su-bg:      #fffbeb;
+  --su-bg2:     #fef3c7;
+  --su-surface: #fde68a;
+  --su-text:    #1c1917;
+  --su-muted:   #78716c;
+  --su-amber:   #b45309;
+  --su-orange:  #c2410c;
+  --su-gold:    #d97706;
+  --su-warm:    #92400e;
+  --su-accent:  #f59e0b;
+}
+
+section {
+  background: var(--su-bg);
+  color: var(--su-text);
+  font-family: 'Noto Sans CJK KR', 'Noto Sans KR', -apple-system, BlinkMacSystemFont,
+               'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+  font-size: 20px;
+  padding: 60px 80px;
+  line-height: 1.65;
+  width: 1280px;
+  height: 720px;
+}
+
+section h1 {
+  color: var(--su-amber);
+  font-size: 2.4em;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin-bottom: 0.4em;
+  padding-bottom: 0.3em;
+  border-bottom: 3px solid var(--su-surface);
+}
+
+section h2 {
+  color: var(--su-orange);
+  font-size: 1.6em;
+  font-weight: 700;
+  margin-bottom: 0.35em;
+  padding-bottom: 0.2em;
+  border-bottom: 2px solid var(--su-bg2);
+}
+
+section h3 {
+  color: var(--su-gold);
+  font-size: 1.2em;
+  font-weight: 700;
+  margin-bottom: 0.3em;
+}
+
+section h4 {
+  color: var(--su-warm);
+  font-size: 1.05em;
+  font-weight: 700;
+  margin-bottom: 0.25em;
+}
+
+section h5 {
+  color: var(--su-muted);
+  font-size: 0.95em;
+  font-weight: 600;
+  margin-bottom: 0.2em;
+}
+
+section h6 {
+  color: var(--su-muted);
+  font-size: 0.88em;
+  font-weight: 600;
+  font-style: italic;
+  margin-bottom: 0.15em;
+}
+
+section p {
+  line-height: 1.7;
+  margin-bottom: 0.75em;
+}
+
+section ul,
+section ol {
+  padding-left: 1.6em;
+  line-height: 1.8;
+}
+
+section li {
+  margin-bottom: 0.35em;
+}
+
+section li::marker {
+  color: var(--su-accent);
+}
+
+section strong {
+  color: var(--su-amber);
+  font-weight: 700;
+}
+
+section em {
+  color: var(--su-orange);
+  font-style: italic;
+}
+
+section code {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.82em;
+  background: var(--su-bg2);
+  color: var(--su-warm);
+  border: 1px solid var(--su-surface);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+section pre {
+  background: #1c1917;
+  color: #fef3c7;
+  border-radius: 6px;
+  padding: 0.9em 1.1em;
+  margin: 0.5em 0;
+  border-left: 4px solid var(--su-accent);
+}
+
+section pre code {
+  background: none;
+  color: #fef3c7;
+  border: none;
+  padding: 0;
+  font-size: 0.78em;
+  line-height: 1.55;
+}
+
+section blockquote {
+  border-left: 4px solid var(--su-accent);
+  background: var(--su-bg2);
+  color: var(--su-warm);
+  padding: 0.6em 1.1em;
+  margin: 0.8em 0;
+  border-radius: 0 6px 6px 0;
+  font-style: italic;
+}
+
+section table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.83em;
+  margin-bottom: 0.8em;
+}
+
+section th {
+  background: var(--su-surface);
+  color: var(--su-warm);
+  padding: 8px 14px;
+  font-weight: 700;
+  text-align: left;
+  border-bottom: 2px solid #fcd34d;
+}
+
+section td {
+  padding: 7px 14px;
+  border-bottom: 1px solid var(--su-bg2);
+  color: var(--su-text);
+}
+
+section tr:nth-child(even) td {
+  background: rgba(254, 243, 199, 0.7);
+}
+
+section a {
+  color: var(--su-amber);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(180, 83, 9, 0.3);
+}
+
+section hr {
+  border: none;
+  border-top: 2px solid var(--su-surface);
+  margin: 0.8em 0;
+}
+
+section header,
+section footer {
+  color: var(--su-muted);
+  font-size: 0.65em;
+}
+
+section::after {
+  color: var(--su-muted);
+  font-size: 0.65em;
+}
