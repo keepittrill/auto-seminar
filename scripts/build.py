@@ -382,6 +382,12 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
                   css:'section{{background:linear-gradient(135deg,#075985 0%,#0f766e 50%,#064e3b 100%)!important}}'}},
     'wash-forest':  {{label:'🌲숲',    preview:'background:linear-gradient(135deg,#14532d,#166534,#365314)',
                   css:'section{{background:linear-gradient(135deg,#14532d 0%,#1a4731 50%,#365314 100%)!important}}'}},
+    'wash-white':   {{label:'🤍화이트', preview:'background:linear-gradient(135deg,#ffffff,#f8fafc,#f1f5f9)',
+                  css:'section{{background:linear-gradient(135deg,#ffffff 0%,#f8fafc 50%,#f1f5f9 100%)!important}}'}},
+    'wash-cream':   {{label:'🧈크림',   preview:'background:linear-gradient(135deg,#fffbeb,#fef3c7,#fde8d8)',
+                  css:'section{{background:linear-gradient(135deg,#fffbeb 0%,#fef9ee 50%,#fde8d8 100%)!important}}'}},
+    'wash-blossom': {{label:'🌸블로썸', preview:'background:linear-gradient(135deg,#fff0f6,#fce7f3,#ede9fe)',
+                  css:'section{{background:linear-gradient(135deg,#fff0f6 0%,#fce7f3 50%,#ede9fe 100%)!important}}'}},
   }};
   const LAYOUTS = {{
     'default':{{label:'기본', desc:'32px',css:''}},
