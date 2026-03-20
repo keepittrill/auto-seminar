@@ -1,0 +1,105 @@
+/* @theme grape */
+
+/*
+ * Grape — Rich Medium Purple
+ * Vivid mid-tone purple — brighter than catppuccin's near-black,
+ * richer than pastel's pale lavender. Confident and creative.
+ */
+
+:root {
+  --gp-bg:      #4c1d95;
+  --gp-bg2:     #3b0764;
+  --gp-surface: #5b21b6;
+  --gp-text:    #ede9fe;
+  --gp-muted:   #a78bda;
+  --gp-h1:      #e9d5ff;
+  --gp-h2:      #c4b5fd;
+  --gp-h3:      #ddd6fe;
+  --gp-accent:  #c4b5fd;
+  --gp-pink:    #f9a8d4;
+}
+
+section {
+  background: var(--gp-bg);
+  color: var(--gp-text);
+  font-family: 'Noto Sans CJK KR', 'Noto Sans KR', -apple-system, BlinkMacSystemFont,
+               'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+  font-size: 20px;
+  padding: 60px 80px;
+  line-height: 1.65;
+  width: 1280px;
+  height: 720px;
+}
+
+section h1 {
+  color: var(--gp-h1);
+  font-size: 2.4em;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin-bottom: 0.4em;
+  padding-bottom: 0.3em;
+  border-bottom: 3px solid rgba(196, 181, 253, 0.25);
+}
+
+section h2 {
+  color: var(--gp-h2);
+  font-size: 1.6em;
+  font-weight: 700;
+  margin-bottom: 0.35em;
+  padding-bottom: 0.2em;
+  border-bottom: 1.5px solid rgba(196, 181, 253, 0.2);
+}
+
+section h3 { color: var(--gp-h3); font-size: 1.2em; font-weight: 700; margin-bottom: 0.3em; }
+section h4 { color: var(--gp-h2); font-size: 1.05em; font-weight: 700; margin-bottom: 0.25em; }
+section h5, section h6 { color: var(--gp-muted); font-size: 0.95em; font-weight: 600; margin-bottom: 0.2em; }
+
+section p { line-height: 1.7; margin-bottom: 0.75em; }
+
+section ul, section ol { padding-left: 1.6em; line-height: 1.8; }
+section li { margin-bottom: 0.35em; }
+section li::marker { color: var(--gp-pink); }
+
+section strong { color: var(--gp-h1); font-weight: 700; }
+section em { color: var(--gp-pink); font-style: italic; }
+
+section code {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.82em;
+  background: var(--gp-bg2);
+  color: var(--gp-accent);
+  border: 1px solid rgba(196, 181, 253, 0.2);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+section pre {
+  background: var(--gp-bg2);
+  border-left: 4px solid var(--gp-accent);
+  border-radius: 6px;
+  padding: 0.9em 1.1em;
+  margin: 0.5em 0;
+}
+
+section pre code { background: none; color: var(--gp-text); border: none; padding: 0; font-size: 0.78em; line-height: 1.55; }
+
+section blockquote {
+  border-left: 4px solid var(--gp-pink);
+  background: rgba(59, 7, 100, 0.6);
+  color: var(--gp-muted);
+  padding: 0.6em 1.1em;
+  margin: 0.8em 0;
+  border-radius: 0 6px 6px 0;
+  font-style: italic;
+}
+
+section table { border-collapse: collapse; width: 100%; font-size: 0.83em; margin-bottom: 0.8em; }
+section th { background: var(--gp-bg2); color: var(--gp-h2); padding: 8px 14px; font-weight: 700; text-align: left; border-bottom: 2px solid var(--gp-accent); }
+section td { padding: 7px 14px; border-bottom: 1px solid rgba(196, 181, 253, 0.12); color: var(--gp-text); }
+section tr:nth-child(even) td { background: rgba(59, 7, 100, 0.5); }
+
+section a { color: var(--gp-accent); text-decoration: none; border-bottom: 1px solid rgba(196, 181, 253, 0.3); }
+section hr { border: none; border-top: 1.5px solid rgba(196, 181, 253, 0.2); margin: 0.8em 0; }
+section header, section footer { color: var(--gp-muted); font-size: 0.65em; }
+section::after { color: var(--gp-muted); font-size: 0.65em; }

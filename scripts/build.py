@@ -376,6 +376,12 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
                   css:'section{{background-image:radial-gradient(ellipse 65% 55% at 0% 0%,rgba(255,255,255,.08) 0%,transparent 60%),radial-gradient(ellipse 55% 65% at 100% 100%,rgba(255,255,255,.08) 0%,transparent 60%)!important}}'}},
     'circuit':  {{label:'회로망',  preview:'background-image:linear-gradient(rgba(200,200,200,.4) 1px,transparent 1px),linear-gradient(90deg,rgba(200,200,200,.4) 1px,transparent 1px),linear-gradient(rgba(200,200,200,.2) 1px,transparent 1px),linear-gradient(90deg,rgba(200,200,200,.2) 1px,transparent 1px);background-size:16px 16px,16px 16px,4px 4px,4px 4px;background-color:#444',
                   css:'section{{background-image:linear-gradient(rgba(127,127,127,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(127,127,127,.1) 1px,transparent 1px),linear-gradient(rgba(127,127,127,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(127,127,127,.05) 1px,transparent 1px)!important;background-size:64px 64px,64px 64px,16px 16px,16px 16px!important}}'}},
+    'wash-sunset':  {{label:'🌅선셋', preview:'background:linear-gradient(135deg,#f97316,#ec4899,#a855f7)',
+                  css:'section{{background:linear-gradient(135deg,#c2410c 0%,#db2777 50%,#7c3aed 100%)!important}}'}},
+    'wash-ocean':   {{label:'🌊오션',  preview:'background:linear-gradient(135deg,#0ea5e9,#0d9488,#065f46)',
+                  css:'section{{background:linear-gradient(135deg,#075985 0%,#0f766e 50%,#064e3b 100%)!important}}'}},
+    'wash-forest':  {{label:'🌲숲',    preview:'background:linear-gradient(135deg,#14532d,#166534,#365314)',
+                  css:'section{{background:linear-gradient(135deg,#14532d 0%,#1a4731 50%,#365314 100%)!important}}'}},
   }};
   const LAYOUTS = {{
     'default':{{label:'기본', desc:'32px',css:''}},
@@ -869,6 +875,9 @@ THEME_META: dict[str, tuple[str, str, list[str]]] = {
     "sunshine":      ("Sunshine",      "선샤인 · 노랑·앰버",      ["#fffbeb", "#b45309", "#c2410c", "#d97706", "#fde68a"]),
     "sakura":        ("Sakura",        "사쿠라 · 벚꽃 핑크",      ["#fff0f3", "#be123c", "#e11d48", "#f43f5e", "#fecdd3"]),
     "mint":          ("Mint",          "민트 · 프레시 그린",       ["#f0fdf4", "#15803d", "#0d9488", "#4ade80", "#052e16"]),
+    "sky":           ("Sky",           "스카이 · 비비드 블루",      ["#075985", "#7dd3fc", "#38bdf8", "#bae6fd", "#e0f2fe"]),
+    "grape":         ("Grape",         "그레이프 · 미디엄 퍼플",    ["#4c1d95", "#e9d5ff", "#c4b5fd", "#f9a8d4", "#ede9fe"]),
+    "coffee":        ("Coffee",        "커피 · 에스프레소 웜",      ["#78350f", "#fde68a", "#fdba74", "#fbbf24", "#fef3c7"]),
 }
 
 

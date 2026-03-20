@@ -184,6 +184,7 @@ class TestThemeMeta:
             "catppuccin", "gradient-dark", "minimal-white", "tech-dark",
             "ocean", "corporate", "retro", "nord", "sunset", "pastel",
             "monochrome", "aurora", "solarized", "sunshine", "sakura", "mint",
+            "sky", "grape", "coffee",
             "default", "gaia", "uncover",
         ]
         for t in expected:
