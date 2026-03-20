@@ -813,6 +813,9 @@ THEME_META: dict[str, tuple[str, str, list[str]]] = {
     "nord":          ("Nord",          "북극 블루 · 쿨톤",     ["#2e3440", "#88c0d0", "#5e81ac", "#a3be8c", "#eceff4"]),
     "sunset":        ("Sunset",        "선셋 퍼플 · 웜",       ["#1a0533", "#ff9a56", "#c084fc", "#ff6b9d", "#fde8d8"]),
     "pastel":        ("Pastel",        "파스텔 · 소프트 라이트", ["#fef6ff", "#9333ea", "#6366f1", "#ec4899", "#3d2b50"]),
+    "monochrome":    ("Monochrome",    "흑백 에디토리얼 · 타이포", ["#fafafa", "#000000", "#333333", "#888888", "#111111"]),
+    "aurora":        ("Aurora",        "오로라 · 다크 그린·바이올렛", ["#060912", "#00f5a0", "#b06aff", "#22d3ee", "#dce8ff"]),
+    "solarized":     ("Solarized",     "솔라라이즈드 · 웜 라이트", ["#fdf6e3", "#cb4b16", "#268bd2", "#2aa198", "#657b83"]),
 }
 
 

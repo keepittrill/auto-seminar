@@ -1,0 +1,210 @@
+/* @theme monochrome */
+
+/*
+ * Monochrome — Editorial B&W
+ * Pure black-and-white typographic theme. No color — only contrast and weight.
+ * Inspired by newspaper layout and editorial design.
+ */
+
+section {
+  background: #fafafa;
+  color: #111111;
+  font-family: 'Georgia', 'Times New Roman', 'Noto Serif CJK KR', 'Noto Serif KR', serif;
+  font-size: 20px;
+  padding: 64px 88px;
+  line-height: 1.65;
+  width: 1280px;
+  height: 720px;
+}
+
+/* Headings — typographic weight only, no color */
+section h1 {
+  color: #000000;
+  font-size: 2.6em;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin-bottom: 0.4em;
+  padding-bottom: 0.3em;
+  border-bottom: 3px solid #000000;
+  font-family: 'Georgia', 'Times New Roman', serif;
+}
+
+section h2 {
+  color: #111111;
+  font-size: 1.7em;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin-bottom: 0.35em;
+  padding-bottom: 0.2em;
+  border-bottom: 1.5px solid #aaaaaa;
+  font-family: 'Georgia', 'Times New Roman', serif;
+}
+
+section h3 {
+  color: #222222;
+  font-size: 1.2em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-family: 'Arial', 'Helvetica', sans-serif;
+  margin-bottom: 0.3em;
+}
+
+section h4 {
+  color: #333333;
+  font-size: 1.05em;
+  font-weight: 700;
+  font-family: 'Arial', 'Helvetica', sans-serif;
+  margin-bottom: 0.25em;
+}
+
+section h5 {
+  color: #444444;
+  font-size: 1em;
+  font-weight: 700;
+  font-style: italic;
+  margin-bottom: 0.2em;
+}
+
+section h6 {
+  color: #555555;
+  font-size: 0.9em;
+  font-weight: 600;
+  font-style: italic;
+  margin-bottom: 0.15em;
+}
+
+/* Body */
+section p {
+  margin-bottom: 0.8em;
+  line-height: 1.7;
+}
+
+/* Lists */
+section ul,
+section ol {
+  padding-left: 1.6em;
+  line-height: 1.75;
+}
+
+section li {
+  margin-bottom: 0.35em;
+}
+
+section li::marker {
+  color: #555555;
+}
+
+/* Inline code */
+section code {
+  font-family: 'Courier New', 'Lucida Console', monospace;
+  font-size: 0.82em;
+  background: #eeeeee;
+  color: #111111;
+  border: 1px solid #cccccc;
+  border-radius: 2px;
+  padding: 1px 5px;
+}
+
+/* Code block */
+section pre {
+  background: #111111;
+  color: #f0f0f0;
+  border-radius: 4px;
+  padding: 1em 1.2em;
+  margin: 0.6em 0;
+  border-left: 4px solid #000000;
+}
+
+section pre code {
+  background: none;
+  color: #f0f0f0;
+  border: none;
+  padding: 0;
+  font-size: 0.8em;
+  line-height: 1.5;
+}
+
+/* Blockquote */
+section blockquote {
+  border-left: 5px solid #000000;
+  background: #f0f0f0;
+  color: #333333;
+  padding: 0.6em 1.2em;
+  margin: 0.8em 0;
+  font-style: italic;
+  font-size: 1.05em;
+}
+
+/* Table */
+section table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 1em;
+  font-family: 'Arial', 'Helvetica', sans-serif;
+  font-size: 0.85em;
+}
+
+section th {
+  background: #111111;
+  color: #ffffff;
+  padding: 8px 14px;
+  font-weight: 700;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.85em;
+}
+
+section td {
+  padding: 7px 14px;
+  border-bottom: 1px solid #cccccc;
+  color: #111111;
+}
+
+section tr:nth-child(even) td {
+  background: #f0f0f0;
+}
+
+/* Strong / Em */
+section strong {
+  color: #000000;
+  font-weight: 700;
+}
+
+section em {
+  color: #333333;
+  font-style: italic;
+}
+
+/* Link */
+section a {
+  color: #000000;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1.5px;
+}
+
+/* Horizontal rule */
+section hr {
+  border: none;
+  border-top: 2px solid #000000;
+  margin: 1em 0;
+}
+
+/* Header / Footer / Page number */
+section header,
+section footer {
+  color: #888888;
+  font-size: 0.65em;
+  font-family: 'Arial', 'Helvetica', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+section::after {
+  color: #888888;
+  font-size: 0.65em;
+  font-family: 'Arial', 'Helvetica', sans-serif;
+}

@@ -1,0 +1,212 @@
+/* @theme solarized */
+
+/*
+ * Solarized — Warm Light
+ * The classic Solarized Light palette by Ethan Schoonover.
+ * Warm cream canvas, muted tones, precise accent colors.
+ * Easy on the eyes, timeless and readable.
+ */
+
+:root {
+  --sl-base3:   #fdf6e3;  /* background */
+  --sl-base2:   #eee8d5;  /* surface */
+  --sl-base1:   #93a1a1;  /* muted comments */
+  --sl-base0:   #839496;  /* body text dim */
+  --sl-base00:  #657b83;  /* body text */
+  --sl-base01:  #586e75;  /* emphasis */
+  --sl-base02:  #073642;  /* heading dark */
+  --sl-yellow:  #b58900;
+  --sl-orange:  #cb4b16;
+  --sl-red:     #dc322f;
+  --sl-magenta: #d33682;
+  --sl-violet:  #6c71c4;
+  --sl-blue:    #268bd2;
+  --sl-cyan:    #2aa198;
+  --sl-green:   #859900;
+}
+
+section {
+  background: var(--sl-base3);
+  color: var(--sl-base00);
+  font-family: 'Noto Sans CJK KR', 'Noto Sans KR', -apple-system, BlinkMacSystemFont,
+               'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+  font-size: 20px;
+  padding: 60px 80px;
+  line-height: 1.65;
+  width: 1280px;
+  height: 720px;
+}
+
+/* Headings */
+section h1 {
+  color: var(--sl-orange);
+  font-size: 2.3em;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin-bottom: 0.4em;
+  padding-bottom: 0.3em;
+  border-bottom: 2.5px solid var(--sl-base2);
+  line-height: 1.2;
+}
+
+section h2 {
+  color: var(--sl-blue);
+  font-size: 1.6em;
+  font-weight: 700;
+  margin-bottom: 0.35em;
+  padding-bottom: 0.2em;
+  border-bottom: 1.5px solid var(--sl-base2);
+}
+
+section h3 {
+  color: var(--sl-cyan);
+  font-size: 1.2em;
+  font-weight: 700;
+  margin-bottom: 0.3em;
+}
+
+section h4 {
+  color: var(--sl-green);
+  font-size: 1.05em;
+  font-weight: 700;
+  margin-bottom: 0.25em;
+}
+
+section h5 {
+  color: var(--sl-magenta);
+  font-size: 0.95em;
+  font-weight: 600;
+  margin-bottom: 0.2em;
+}
+
+section h6 {
+  color: var(--sl-violet);
+  font-size: 0.88em;
+  font-weight: 600;
+  margin-bottom: 0.15em;
+}
+
+/* Body */
+section p {
+  line-height: 1.7;
+  margin-bottom: 0.75em;
+}
+
+/* Lists */
+section ul,
+section ol {
+  padding-left: 1.6em;
+  line-height: 1.8;
+}
+
+section li {
+  margin-bottom: 0.35em;
+}
+
+section li::marker {
+  color: var(--sl-base1);
+}
+
+section strong {
+  color: var(--sl-base01);
+  font-weight: 700;
+}
+
+section em {
+  color: var(--sl-orange);
+  font-style: italic;
+}
+
+/* Inline code */
+section code {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  font-size: 0.82em;
+  background: var(--sl-base2);
+  color: var(--sl-red);
+  border: 1px solid #d4c8b0;
+  border-radius: 3px;
+  padding: 2px 6px;
+}
+
+/* Code block */
+section pre {
+  background: var(--sl-base02);
+  color: var(--sl-base2);
+  border-radius: 6px;
+  padding: 0.9em 1.1em;
+  margin: 0.5em 0;
+  border-left: 4px solid var(--sl-yellow);
+}
+
+section pre code {
+  background: none;
+  color: var(--sl-base2);
+  border: none;
+  padding: 0;
+  font-size: 0.78em;
+  line-height: 1.55;
+}
+
+/* Blockquote */
+section blockquote {
+  border-left: 4px solid var(--sl-yellow);
+  background: var(--sl-base2);
+  color: var(--sl-base01);
+  padding: 0.6em 1.1em;
+  margin: 0.8em 0;
+  border-radius: 0 5px 5px 0;
+  font-style: italic;
+}
+
+/* Table */
+section table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.83em;
+  margin-bottom: 0.8em;
+}
+
+section th {
+  background: var(--sl-base2);
+  color: var(--sl-base02);
+  padding: 8px 14px;
+  font-weight: 700;
+  text-align: left;
+  border-bottom: 2px solid #c9bda0;
+}
+
+section td {
+  padding: 7px 14px;
+  border-bottom: 1px solid var(--sl-base2);
+  color: var(--sl-base00);
+}
+
+section tr:nth-child(even) td {
+  background: rgba(238, 232, 213, 0.6);
+}
+
+/* Link */
+section a {
+  color: var(--sl-blue);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(38, 139, 210, 0.35);
+}
+
+/* HR */
+section hr {
+  border: none;
+  border-top: 1.5px solid var(--sl-base2);
+  margin: 0.8em 0;
+}
+
+/* Page number / header / footer */
+section header,
+section footer {
+  color: var(--sl-base1);
+  font-size: 0.65em;
+}
+
+section::after {
+  color: var(--sl-base1);
+  font-size: 0.65em;
+}

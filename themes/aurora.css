@@ -1,0 +1,225 @@
+/* @theme aurora */
+
+/*
+ * Aurora — Northern Lights Dark
+ * Ultra-dark canvas with electric green and violet aurora accents.
+ * Gradient-lit headings, subtle glow — dramatic and modern.
+ */
+
+:root {
+  --au-bg:      #060912;
+  --au-bg2:     #0d1424;
+  --au-surface: #141e35;
+  --au-text:    #dce8ff;
+  --au-muted:   #7a8fb8;
+  --au-green:   #00f5a0;
+  --au-purple:  #b06aff;
+  --au-cyan:    #22d3ee;
+  --au-pink:    #f472b6;
+}
+
+section {
+  background: var(--au-bg);
+  color: var(--au-text);
+  font-family: 'Noto Sans CJK KR', 'Noto Sans KR', -apple-system, BlinkMacSystemFont,
+               'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+  font-size: 20px;
+  padding: 60px 80px;
+  line-height: 1.65;
+  width: 1280px;
+  height: 720px;
+  position: relative;
+}
+
+/* Aurora glow overlay on section background */
+section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 35% at 15% 0%, rgba(0, 245, 160, 0.07) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 30% at 85% 0%, rgba(176, 106, 255, 0.07) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+section > * { position: relative; z-index: 1; }
+
+/* h1 — gradient text, aurora sweep */
+section h1 {
+  font-size: 2.4em;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin-bottom: 0.45em;
+  background: linear-gradient(90deg, var(--au-green) 0%, var(--au-cyan) 40%, var(--au-purple) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 18px rgba(0, 245, 160, 0.35));
+}
+
+section h2 {
+  color: var(--au-green);
+  font-size: 1.55em;
+  font-weight: 700;
+  margin-bottom: 0.4em;
+  padding-bottom: 0.25em;
+  border-bottom: 1.5px solid rgba(0, 245, 160, 0.25);
+  text-shadow: 0 0 14px rgba(0, 245, 160, 0.4);
+}
+
+section h3 {
+  color: var(--au-purple);
+  font-size: 1.15em;
+  font-weight: 700;
+  margin-bottom: 0.3em;
+  text-shadow: 0 0 10px rgba(176, 106, 255, 0.4);
+}
+
+section h4 {
+  color: var(--au-cyan);
+  font-size: 1.0em;
+  font-weight: 600;
+  margin-bottom: 0.25em;
+}
+
+section h5 {
+  color: var(--au-pink);
+  font-size: 0.95em;
+  font-weight: 600;
+  margin-bottom: 0.2em;
+}
+
+section h6 {
+  color: var(--au-muted);
+  font-size: 0.88em;
+  font-weight: 600;
+  margin-bottom: 0.15em;
+}
+
+/* Body */
+section p {
+  line-height: 1.7;
+  margin-bottom: 0.75em;
+}
+
+/* Lists */
+section ul,
+section ol {
+  padding-left: 1.5em;
+  line-height: 1.8;
+}
+
+section li {
+  margin-bottom: 0.3em;
+}
+
+section li::marker {
+  color: var(--au-green);
+}
+
+section strong {
+  color: var(--au-green);
+  font-weight: 700;
+}
+
+section em {
+  color: var(--au-cyan);
+  font-style: italic;
+}
+
+/* Inline code */
+section code {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.8em;
+  background: var(--au-bg2);
+  color: var(--au-green);
+  border: 1px solid rgba(0, 245, 160, 0.2);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+/* Code block */
+section pre {
+  background: var(--au-bg2);
+  border-left: 3px solid var(--au-green);
+  border-radius: 6px;
+  padding: 0.9em 1.1em;
+  margin: 0.5em 0;
+  box-shadow: 0 0 20px rgba(0, 245, 160, 0.06);
+}
+
+section pre code {
+  background: none;
+  color: var(--au-text);
+  border: none;
+  padding: 0;
+  font-size: 0.78em;
+  line-height: 1.55;
+}
+
+/* Blockquote */
+section blockquote {
+  border-left: 3px solid;
+  border-image: linear-gradient(180deg, var(--au-green), var(--au-purple)) 1;
+  background: rgba(13, 20, 36, 0.8);
+  color: var(--au-muted);
+  padding: 0.6em 1.1em;
+  margin: 0.7em 0;
+  border-radius: 0 6px 6px 0;
+  font-style: italic;
+}
+
+/* Table */
+section table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.82em;
+  margin-bottom: 0.8em;
+}
+
+section th {
+  background: var(--au-surface);
+  color: var(--au-green);
+  padding: 8px 13px;
+  font-weight: 700;
+  text-align: left;
+  border-bottom: 2px solid rgba(0, 245, 160, 0.3);
+}
+
+section td {
+  padding: 7px 13px;
+  border-bottom: 1px solid rgba(20, 30, 53, 1);
+}
+
+section tr:nth-child(even) td {
+  background: rgba(13, 20, 36, 0.6);
+}
+
+/* Link */
+section a {
+  color: var(--au-cyan);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(34, 211, 238, 0.35);
+}
+
+/* HR */
+section hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--au-green), var(--au-purple), transparent);
+  margin: 0.8em 0;
+}
+
+/* Page number / header / footer */
+section header,
+section footer {
+  color: var(--au-muted);
+  font-size: 0.6em;
+}
+
+section::after {
+  color: var(--au-muted);
+  font-size: 0.6em;
+}
