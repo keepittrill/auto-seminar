@@ -251,6 +251,56 @@ class TestRewriteImagePaths:
         assert "https://x.com/b.png" in result
 
 
+class TestGhTreeToApi:
+    def test_basic(self):
+        url = "https://github.com/owner/repo/tree/main/topics"
+        api = B._gh_tree_to_api(url)
+        assert api == "https://api.github.com/repos/owner/repo/contents/topics?ref=main"
+
+    def test_root_dir(self):
+        url = "https://github.com/owner/repo/tree/main"
+        api = B._gh_tree_to_api(url)
+        assert api == "https://api.github.com/repos/owner/repo/contents/?ref=main"
+
+    def test_nested_path(self):
+        url = "https://github.com/owner/repo/tree/main/a/b/c"
+        api = B._gh_tree_to_api(url)
+        assert api == "https://api.github.com/repos/owner/repo/contents/a/b/c?ref=main"
+
+    def test_feature_branch(self):
+        url = "https://github.com/owner/repo/tree/feature-branch/docs"
+        api = B._gh_tree_to_api(url)
+        assert "feature-branch" in api
+        assert "docs" in api
+
+    def test_non_github_returns_none(self):
+        assert B._gh_tree_to_api("https://example.com/some/path") is None
+
+    def test_blob_url_returns_none(self):
+        # blob URL은 tree가 아님
+        assert B._gh_tree_to_api("https://github.com/owner/repo/blob/main/file.md") is None
+
+
+class TestListRemoteDirPatternFilter:
+    """네트워크 없이 패턴 필터 로직만 검증 (fnmatch)."""
+
+    def _filter(self, names: list[str], pattern: str) -> list[str]:
+        import fnmatch
+        return [n for n in names if fnmatch.fnmatch(n, pattern)]
+
+    def test_wildcard_all_md(self):
+        names = ["a.md", "b.md", "c.txt", "d.py"]
+        assert self._filter(names, "*.md") == ["a.md", "b.md"]
+
+    def test_prefix_pattern(self):
+        names = ["phase-01-html.md", "phase-02-css.md", "readme.md", "index.md"]
+        assert self._filter(names, "phase-*.md") == ["phase-01-html.md", "phase-02-css.md"]
+
+    def test_exact_match(self):
+        names = ["notes.md", "other.md"]
+        assert self._filter(names, "notes.md") == ["notes.md"]
+
+
 class TestFetchAllRemoteSlides:
     def test_empty_config_returns_empty(self):
         assert B.fetch_all_remote_slides({}) == []

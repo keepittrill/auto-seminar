@@ -9,6 +9,7 @@ slides/*.md  →  dist/*/index.html    (HTML 발표 슬라이드, via Marp CLI)
              →  dist/index.html      (랜딩 페이지)
 """
 
+import fnmatch
 import json
 import os
 import pathlib
@@ -1485,6 +1486,68 @@ def _gh_blob_to_raw(url: str) -> str:
     return url
 
 
+def _gh_tree_to_api(dir_url: str) -> "str | None":
+    """GitHub tree URL → Contents API URL.
+
+    https://github.com/<owner>/<repo>/tree/<branch>/<path>
+    → https://api.github.com/repos/<owner>/<repo>/contents/<path>?ref=<branch>
+    """
+    m = re.match(
+        r"https://github\.com/([^/]+)/([^/]+)/tree/([^/]+)(.*)",
+        dir_url,
+    )
+    if not m:
+        return None
+    owner, repo, branch, path = m.group(1), m.group(2), m.group(3), m.group(4)
+    path = path.strip("/")
+    return f"https://api.github.com/repos/{owner}/{repo}/contents/{path}?ref={branch}"
+
+
+def _list_remote_dir(dir_url: str, pattern: str = "*.md") -> list[dict]:
+    """GitHub tree URL의 파일 목록 fetch (Contents API).
+
+    반환: [{"url": blob_url, "name": filename}, ...]
+    패턴: fnmatch 형식 (예: "*.md", "phase-03-*.md")
+    """
+    api_url = _gh_tree_to_api(dir_url)
+    if not api_url:
+        print(f"⚠  dir URL 형식 오류 ({dir_url}) — skip", file=sys.stderr)
+        return []
+
+    try:
+        req = urllib.request.Request(
+            api_url,
+            headers={
+                "Accept": "application/vnd.github+json",
+                "User-Agent": "auto-seminar/1.5",
+            },
+        )
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+    except Exception as e:
+        print(f"⚠  dir fetch 실패 ({dir_url}): {e} — skip", file=sys.stderr)
+        return []
+
+    if not isinstance(data, list):
+        print(f"⚠  dir 응답이 배열이 아님 ({dir_url}) — 비어있거나 권한 없음", file=sys.stderr)
+        return []
+
+    results = []
+    for item in data:
+        if item.get("type") != "file":
+            continue
+        name = item.get("name", "")
+        if not fnmatch.fnmatch(name, pattern):
+            continue
+        html_url = item.get("html_url", "")
+        if html_url:
+            results.append({"url": html_url, "name": name})
+
+    results.sort(key=lambda x: x["name"])  # 알파벳 순 정렬
+    print(f"  📂  dir  {dir_url}  →  {len(results)}개 파일 ({pattern})")
+    return results
+
+
 def _rewrite_image_paths(body: str, raw_base: str) -> str:
     """상대경로 이미지 참조를 절대 raw URL로 변환."""
     def replace(m: re.Match) -> str:
@@ -1540,25 +1603,55 @@ def fetch_remote_slide(entry: dict, config: dict) -> "pathlib.Path | None":
 
 
 def fetch_all_remote_slides(config: dict) -> list:
-    """remote_slides 목록 전체 fetch. 성공한 Path 리스트 반환."""
+    """remote_slides 목록 전체 fetch. 성공한 Path 리스트 반환.
+
+    각 항목은 두 가지 형식을 지원:
+      - url: "..."       → 파일 1개 (기존)
+      - dir: "..."       → 디렉토리 전체 (GitHub Contents API)
+        pattern: "*.md"  → fnmatch 필터 (기본: "*.md")
+        stem_prefix: ""  → stem 앞에 붙일 접두어 (충돌 방지용, 선택)
+
+    seminar_theme / seminar_title / seminar_visible 은 dir 항목에서 모든 파일에 상속됨.
+    """
     entries = config.get("remote_slides", [])
     if not entries:
         return []
 
     seen_stems: set[str] = set()
     paths: list[pathlib.Path] = []
+
     for entry in entries:
-        stem = entry.get("stem", "").strip()
-        if not stem:
-            raw_url = _gh_blob_to_raw(entry.get("url", ""))
-            stem = pathlib.Path(urllib.parse.urlparse(raw_url).path).stem
-        if stem in seen_stems:
-            print(f"⚠  remote_slides stem 중복 '{stem}' — skip", file=sys.stderr)
-            continue
-        seen_stems.add(stem)
-        p = fetch_remote_slide(entry, config)
-        if p:
-            paths.append(p)
+        if "dir" in entry:
+            # ── dir: 항목 → 파일 목록으로 확장 ──────────────────────────────
+            pattern     = entry.get("pattern", "*.md")
+            stem_prefix = entry.get("stem_prefix", "")
+            inherited   = {k: v for k, v in entry.items()
+                           if k.startswith("seminar_")}
+            files = _list_remote_dir(entry["dir"], pattern)
+            for f in files:
+                file_stem = stem_prefix + pathlib.Path(f["name"]).stem
+                if file_stem in seen_stems:
+                    print(f"⚠  remote_slides stem 중복 '{file_stem}' — skip", file=sys.stderr)
+                    continue
+                seen_stems.add(file_stem)
+                file_entry = {**inherited, "url": f["url"], "stem": file_stem}
+                p = fetch_remote_slide(file_entry, config)
+                if p:
+                    paths.append(p)
+        else:
+            # ── url: 항목 (기존) ───────────────────────────────────────────
+            stem = entry.get("stem", "").strip()
+            if not stem:
+                raw_url = _gh_blob_to_raw(entry.get("url", ""))
+                stem = pathlib.Path(urllib.parse.urlparse(raw_url).path).stem
+            if stem in seen_stems:
+                print(f"⚠  remote_slides stem 중복 '{stem}' — skip", file=sys.stderr)
+                continue
+            seen_stems.add(stem)
+            p = fetch_remote_slide(entry, config)
+            if p:
+                paths.append(p)
+
     return paths
 
 

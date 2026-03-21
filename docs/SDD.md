@@ -695,14 +695,37 @@ Marp CLI는 로컬 파일만 받으므로 원격 MD를 직접 처리할 수 없�
 | 함수 | 역할 |
 |------|------|
 | `_gh_blob_to_raw(url)` | `github.com/.../blob/...` → `raw.githubusercontent.com/...` |
+| `_gh_tree_to_api(url)` | `github.com/.../tree/...` → `api.github.com/repos/.../contents/...` |
+| `_list_remote_dir(dir_url, pattern)` | Contents API로 디렉토리 파일 목록 fetch + fnmatch 필터 |
 | `_rewrite_image_paths(body, raw_base)` | 상대경로 이미지 → 절대 raw URL (urllib.parse.urljoin) |
 | `fetch_remote_slide(entry, config)` | URL fetch → `slides/_remote_<stem>.md` 저장 |
-| `fetch_all_remote_slides(config)` | 전체 목록 처리, stem 중복 감지 |
+| `fetch_all_remote_slides(config)` | 전체 목록 처리: `url:` 단일 파일 / `dir:` 디렉토리 확장 |
+
+#### 항목 형식
+
+```yaml
+# url: 단일 파일
+- url: https://github.com/<owner>/<repo>/blob/<branch>/<path>
+  stem: my-slide        # 선택
+  stem_prefix: ""       # url 항목은 미사용
+
+# dir: 디렉토리 (GitHub Contents API)
+- dir: https://github.com/<owner>/<repo>/tree/<branch>/<path>
+  pattern: "*.md"       # fnmatch 필터 (기본: "*.md")
+  stem_prefix: "sw-"    # 각 파일 stem 앞에 붙일 접두어 (충돌 방지)
+
+# 공통 (양쪽 모두 지원)
+  seminar_theme: ocean
+  seminar_title: "제목"
+  seminar_visible: true
+```
+
+`dir:` 항목은 `_list_remote_dir()` 호출 후 각 파일에 대해 `fetch_remote_slide()`를 재사용합니다. `seminar_*` 키는 모든 파일에 상속됩니다.
 
 #### `main()` 통합
 
 ```python
-remote_paths = fetch_all_remote_slides(config)  # fetch
+remote_paths = fetch_all_remote_slides(config)  # fetch (url + dir 모두)
 try:
     md_files = sorted(SLIDES_DIR.glob("*.md"), ...)  # _remote_*.md 자동 포함
     ...  # 기존 빌드 루프
@@ -713,8 +736,10 @@ finally:
 #### 에러 처리
 
 - URL 접근 불가(timeout/404) → 경고 + skip (전체 빌드 계속)
+- dir Contents API 실패 / 비어있는 응답 → 경고 + skip
 - stem 중복 → 경고 + skip
 - private repo → 미지원 (token 키 추가 가능)
+- `dir:` 1단계 깊이만 지원 (재귀 탐색 미구현)
 
 ---
 
@@ -989,4 +1014,4 @@ GitHub Actions는 Non-0 종료 코드 시 Step 실패로 처리하여 Pages 배�
 | 1.0.0 | 2026-03-12 | 초기 작성 (HTML 빌드, 테마 시스템, 랜딩 페이지, GitHub Pages 배포) |
 | 1.1.0 | 2026-03-13 | 내보내기 시스템 설계 추가 (섹션 5), 카드 구조 변경 (7.2), Chrome 탐지 설계, 오류 처리 섹션 신규 |
 | 1.2.0 | 2026-03-14 | 디렉터리 구조 갱신 (1.1), 데이터 흐름에 후처리 단계 추가 (1.2), 설계 결정 5건 추가 (1.3), 함수 목록 갱신 (2.1), 테마 스위처 설계 (6.6), create_theme.py 설계 (6.5), lint 동적 감지 (6.5) |
-| 1.5.0 | 2026-03-21 | 원격 GitHub MD 슬라이드 설계 (6.7), 테마 스위처 특이도 버그 수정 (6.6) |
+| 1.5.0 | 2026-03-21 | 원격 GitHub MD 슬라이드 설계 (6.7): url 단일 파일 + dir 디렉토리 패턴, 테마 스위처 특이도 버그 수정 (6.6) |

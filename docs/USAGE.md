@@ -1179,6 +1179,8 @@ theme: catppuccin
 
 다른 repo에 있는 MD 파일을 로컬에 복사하지 않고 URL만으로 빌드에 포함할 수 있습니다.
 
+#### 파일 1개 지정
+
 ```yaml
 # seminar.config.yml
 remote_slides:
@@ -1188,15 +1190,44 @@ remote_slides:
     seminar_title: "HTML 기초" # 선택
 ```
 
+#### 디렉토리 패턴 (여러 파일 한번에)
+
+```yaml
+remote_slides:
+  # 디렉토리 내 모든 .md 파일
+  - dir: https://github.com/keepittrill/sw-learning/tree/main/topics
+    seminar_theme: catppuccin
+
+  # 패턴으로 필터링 (fnmatch 형식)
+  - dir: https://github.com/keepittrill/sw-learning/tree/main/topics
+    pattern: "phase-03-*.md"   # 선택 (기본: "*.md")
+    stem_prefix: "sw-"         # 선택: stem 앞에 접두어 추가 (충돌 방지)
+    seminar_theme: ocean
+
+  # 혼합 사용 가능
+  - url: https://github.com/keepittrill/sw-learning/blob/main/intro.md
+    seminar_title: "소개"
+```
+
+`pattern`은 [fnmatch](https://docs.python.org/3/library/fnmatch.html) 형식입니다:
+
+| 패턴 | 설명 |
+|------|------|
+| `*.md` | 모든 .md 파일 (기본값) |
+| `phase-03-*.md` | "phase-03-"으로 시작하는 .md |
+| `[0-9][0-9]-*.md` | 숫자 2자리로 시작하는 .md |
+
 **동작 방식:**
 - 빌드 시 `slides/_remote_<stem>.md`로 임시 저장 → 기존 파이프라인 그대로 처리
 - 빌드 완료 후 임시 파일 자동 삭제 (git에 남지 않음)
 - 상대경로 이미지(`./img/foo.png`)는 raw GitHub URL로 자동 변환
-- URL 접근 불가 시 경고 출력 후 skip (전체 빌드는 계속됨)
+- URL/dir 접근 불가 시 경고 출력 후 skip (전체 빌드는 계속됨)
+- `dir:` 항목은 파일명 알파벳 순으로 처리
 
 **제한:**
-- public repo만 지원 (private repo는 token 불필요)
+- public repo만 지원
 - 원격 파일 변경 시 자동 트리거 없음 (push할 때마다 다시 fetch)
+- `dir:` 는 1단계 깊이만 (하위 디렉토리 재귀 탐색 미지원)
 
 ### 7.5 발표자 노트
 
