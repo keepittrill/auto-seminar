@@ -394,6 +394,49 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
     'wiki':   {{label:'Wiki', desc:'20px',css:'section{{font-size:20px!important}}section h1{{font-size:52px!important}}section h2{{font-size:36px!important}}section h3{{font-size:28px!important}}section pre{{max-height:50vh!important;overflow-y:auto!important}}'}},
   }};
   const LAYOUT_FS   = {{default:32,dense:24,wiki:20}};
+  // ── highlight.js 팔레트 (테마별 코드 하이라이트 색상) ───────────────────────
+  const HLJS_PALETTES = {{
+    'mocha':      {{kw:'#cba6f7',str:'#a6e3a1',cm:'#6c7086',num:'#fab387',bi:'#89b4fa',fn:'#89dceb',at:'#f38ba8',op:'#94e2d5'}},
+    'nord':       {{kw:'#81a1c1',str:'#a3be8c',cm:'#616e88',num:'#b48ead',bi:'#88c0d0',fn:'#8fbcbb',at:'#bf616a',op:'#81a1c1'}},
+    'tokyo':      {{kw:'#bb9af7',str:'#9ece6a',cm:'#565f89',num:'#ff9e64',bi:'#7dcfff',fn:'#7aa2f7',at:'#f7768e',op:'#89ddff'}},
+    'matrix':     {{kw:'#00ff41',str:'#7fffb0',cm:'#004d00',num:'#00e838',bi:'#33ff66',fn:'#ffffff',at:'#00ff41',op:'#33ff66'}},
+    'github':     {{kw:'#cf222e',str:'#0a3069',cm:'#6e7781',num:'#0550ae',bi:'#953800',fn:'#8250df',at:'#116329',op:'#0550ae'}},
+    'atom-light': {{kw:'#a626a4',str:'#50a14f',cm:'#a0a1a7',num:'#986801',bi:'#4078f2',fn:'#c18401',at:'#e45649',op:'#0184bc'}},
+    'solarized':  {{kw:'#859900',str:'#2aa198',cm:'#93a1a1',num:'#d33682',bi:'#268bd2',fn:'#cb4b16',at:'#b58900',op:'#859900'}},
+    'xcode':      {{kw:'#ad3da4',str:'#d12f1b',cm:'#5d6c79',num:'#272ad8',bi:'#703daa',fn:'#3900a0',at:'#1c00cf',op:'#000000'}},
+    'mono':       {{kw:'#111111',str:'#444444',cm:'#999999',num:'#111111',bi:'#222222',fn:'#111111',at:'#333333',op:'#000000'}},
+  }};
+  const THEME_HLJS = {{
+    'catppuccin':'mocha',  'gradient-dark':'tokyo', 'tech-dark':'tokyo',
+    'ocean':'mocha',       'retro':'matrix',         'nord':'nord',
+    'sunset':'mocha',      'aurora':'tokyo',          'sky':'nord',
+    'grape':'mocha',       'coffee':'mocha',          'gaia':'nord',
+    'minimal-white':'github',  'corporate':'github',  'pastel':'atom-light',
+    'monochrome':'mono',       'solarized':'solarized','sunshine':'xcode',
+    'sakura':'atom-light',     'mint':'atom-light',   'default':'github',
+    'uncover':'github',        'slate':'github',       'lavender':'atom-light',
+    'paper':'xcode',           'azure':'github',       'rose':'atom-light',
+    'peach':'xcode',           'chalk':'mono',
+  }};
+  function _hljsCss(name) {{
+    const p = HLJS_PALETTES[THEME_HLJS[name]];
+    if (!p) return '';
+    return [
+      'section code.hljs{{color:inherit;background:transparent}}',
+      'section .hljs-keyword,section .hljs-selector-tag,section .hljs-tag{{color:'+p.kw+';font-weight:600}}',
+      'section .hljs-string,section .hljs-selector-attr,section .hljs-addition{{color:'+p.str+'}}',
+      'section .hljs-comment,section .hljs-quote{{color:'+p.cm+';font-style:italic}}',
+      'section .hljs-number,section .hljs-literal,section .hljs-symbol,section .hljs-bullet{{color:'+p.num+'}}',
+      'section .hljs-built_in,section .hljs-selector-pseudo{{color:'+p.bi+'}}',
+      'section .hljs-title,section .hljs-section,section .hljs-name,section .hljs-type{{color:'+p.fn+';font-weight:600}}',
+      'section .hljs-attribute{{color:'+p.at+'}}',
+      'section .hljs-operator,section .hljs-punctuation{{color:'+p.op+'}}',
+      'section .hljs-variable,section .hljs-template-variable{{color:'+p.bi+'}}',
+      'section .hljs-regexp{{color:'+p.str+'}}',
+      'section .hljs-meta,section .hljs-meta .hljs-keyword{{color:'+p.cm+'}}',
+      'section .hljs-deletion{{color:#ff5555}}',
+    ].join('');
+  }}
   const INIT_THEME  = '{active_theme}';
   const INIT_LAYOUT = '{active_layout}';
   let current        = INIT_THEME;
@@ -411,6 +454,10 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
     }}
     current = name;
     localStorage.setItem('as-theme', name);
+    // hljs 색상 교체
+    let hljsEl = document.getElementById('as-hljs-css');
+    if (!hljsEl) {{ hljsEl = document.createElement('style'); hljsEl.id = 'as-hljs-css'; document.head.appendChild(hljsEl); }}
+    hljsEl.textContent = _hljsCss(name);
     renderThemeButtons();
   }}
 
@@ -580,6 +627,12 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
     }});
   }};
 
+  // 초기 hljs 적용 (현재 테마 기준)
+  (function() {{
+    const el = document.createElement('style'); el.id = 'as-hljs-css';
+    el.textContent = _hljsCss(INIT_THEME);
+    document.head.appendChild(el);
+  }})();
   const savedTheme = localStorage.getItem('as-theme');
   if (savedTheme && THEMES[savedTheme]) applyTheme(savedTheme);
   const savedLayout = localStorage.getItem('as-layout');
