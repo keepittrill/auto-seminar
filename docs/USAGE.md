@@ -1225,9 +1225,35 @@ remote_slides:
 - `dir:` 항목은 파일명 알파벳 순으로 처리
 
 **제한:**
-- public repo만 지원
 - 원격 파일 변경 시 자동 트리거 없음 (push할 때마다 다시 fetch)
 - `dir:` 는 1단계 깊이만 (하위 디렉토리 재귀 탐색 미지원)
+
+#### Private repo 접근 (PAT 설정)
+
+원격 repo가 private인 경우 Personal Access Token(PAT)을 등록해야 합니다.
+
+**1단계 — Fine-grained PAT 발급**
+
+1. GitHub → **Settings** → **Developer settings** → **Personal access tokens** → **Fine-grained tokens** → **Generate new token**
+2. 아래와 같이 설정:
+
+| 항목 | 값 |
+|------|----|
+| Resource owner | 원격 repo의 소유자 (본인 또는 org) |
+| Repository access | Only select repositories → 원격 repo 선택 |
+| Permissions → Contents | **Read-only** |
+
+3. 토큰 생성 후 값 복사 (한 번만 표시됨)
+
+**2단계 — auto-seminar repo에 Secret 등록**
+
+1. `auto-seminar` repo → **Settings** → **Secrets and variables** → **Actions**
+2. **New repository secret** 클릭
+3. Name: `REMOTE_SLIDES_TOKEN` / Value: 복사한 토큰 붙여넣기
+
+등록 완료 후 push하거나 **Actions → Run workflow**로 수동 트리거하면 됩니다.
+
+> `REMOTE_SLIDES_TOKEN`이 없으면 public repo는 그대로 동작하고, private repo는 경고 후 skip됩니다.
 
 ### 7.5 발표자 노트
 
