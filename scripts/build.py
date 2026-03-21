@@ -282,7 +282,11 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
 .ts-sh{{color:rgba(255,255,255,.5);font-size:.7rem;font-weight:700;
   letter-spacing:.07em;text-transform:uppercase;margin-bottom:7px;
   padding-bottom:5px;border-bottom:1px solid rgba(255,255,255,.07)}}
-#ts-grid{{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px}}
+#ts-grid{{margin-bottom:10px}}
+.ts-group-label{{font-size:.65rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:rgba(255,255,255,.38);padding:5px 2px 3px;margin-top:4px}}
+.ts-group-label:first-child{{margin-top:0}}
+.ts-group-grid{{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:6px}}
 .ts-item{{display:flex;align-items:center;gap:6px;padding:6px 8px;
   border-radius:7px;border:1px solid transparent;cursor:pointer;
   background:rgba(255,255,255,.04);transition:all .15s;color:#ccc}}
@@ -495,17 +499,38 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
     localStorage.setItem('as-align', centered ? 'center' : 'left');
   }};
 
+  function _themeLuminance(hex) {{
+    const r = parseInt(hex.slice(1,3),16)/255;
+    const g = parseInt(hex.slice(3,5),16)/255;
+    const b = parseInt(hex.slice(5,7),16)/255;
+    return 0.299*r + 0.587*g + 0.114*b;
+  }}
+  function _makeThemeBtn(key, t) {{
+    const el = document.createElement('div');
+    el.className = 'ts-item' + (key === current ? ' ts-active' : '');
+    const dots = t.colors.slice(0,4).map(c =>
+      '<span class="ts-dot" style="background:' + c + '"></span>').join('');
+    el.innerHTML = '<span class="ts-dots">' + dots + '</span><span class="ts-label">' + t.label + '</span>';
+    el.onclick = () => applyTheme(key);
+    return el;
+  }}
   function renderThemeButtons() {{
-    const grid = document.getElementById('ts-grid');
-    grid.innerHTML = '';
+    const wrap = document.getElementById('ts-grid');
+    wrap.innerHTML = '';
+    const dark = [], light = [];
     Object.entries(THEMES).forEach(([key, t]) => {{
-      const el = document.createElement('div');
-      el.className = 'ts-item' + (key === current ? ' ts-active' : '');
-      const dots = t.colors.slice(0,4).map(c =>
-        '<span class="ts-dot" style="background:' + c + '"></span>').join('');
-      el.innerHTML = '<span class="ts-dots">' + dots + '</span><span class="ts-label">' + t.label + '</span>';
-      el.onclick = () => applyTheme(key);
-      grid.appendChild(el);
+      (_themeLuminance(t.colors[0]) < 0.5 ? dark : light).push([key, t]);
+    }});
+    [['🌙 어두운 계열', dark], ['☀️ 밝은 계열', light]].forEach(([label, items]) => {{
+      if (!items.length) return;
+      const lbl = document.createElement('div');
+      lbl.className = 'ts-group-label';
+      lbl.textContent = label;
+      wrap.appendChild(lbl);
+      const grid = document.createElement('div');
+      grid.className = 'ts-group-grid';
+      items.forEach(([key, t]) => grid.appendChild(_makeThemeBtn(key, t)));
+      wrap.appendChild(grid);
     }});
   }}
 
