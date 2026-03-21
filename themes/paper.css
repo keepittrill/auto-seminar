@@ -1,0 +1,109 @@
+/* @theme paper */
+
+/*
+ * Paper — Warm Stone Editorial
+ * Warm off-white (stone-50) with amber/brown headings and stone text.
+ * Editorial warmth — pairs perfectly with the Cream wash background.
+ */
+
+:root {
+  --pp-bg:      #fafaf9;
+  --pp-bg2:     #e7e5e4;
+  --pp-surface: #f5f5f4;
+  --pp-text:    #44403c;
+  --pp-muted:   #78716c;
+  --pp-h1:      #1c1917;
+  --pp-h2:      #b45309;
+  --pp-h3:      #d97706;
+  --pp-accent:  #f59e0b;
+  --pp-border:  #d6d3d1;
+}
+
+section {
+  background: var(--pp-bg);
+  color: var(--pp-text);
+  font-family: 'Noto Sans CJK KR', 'Noto Sans KR', -apple-system, BlinkMacSystemFont,
+               'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+  font-size: 20px;
+  padding: 60px 80px;
+  line-height: 1.65;
+  width: 1280px;
+  height: 720px;
+}
+
+section h1 {
+  color: var(--pp-h1);
+  font-size: 2.4em;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin-bottom: 0.4em;
+  padding-bottom: 0.3em;
+  border-bottom: 3px solid rgba(245, 158, 11, 0.3);
+}
+
+section h2 {
+  color: var(--pp-h2);
+  font-size: 1.6em;
+  font-weight: 700;
+  margin-bottom: 0.35em;
+  padding-bottom: 0.2em;
+  border-bottom: 1.5px solid rgba(180, 83, 9, 0.2);
+}
+
+section h3 { color: var(--pp-h3); font-size: 1.2em; font-weight: 700; margin-bottom: 0.3em; }
+section h4 { color: var(--pp-h2); font-size: 1.05em; font-weight: 700; margin-bottom: 0.25em; }
+section h5, section h6 { color: var(--pp-muted); font-size: 0.95em; font-weight: 600; margin-bottom: 0.2em; }
+
+section p { line-height: 1.7; margin-bottom: 0.75em; }
+
+section ul, section ol { padding-left: 1.6em; line-height: 1.8; }
+section li { margin-bottom: 0.35em; }
+section li::marker { color: var(--pp-accent); }
+
+section strong { color: var(--pp-h1); font-weight: 700; }
+section em { color: var(--pp-h2); font-style: italic; }
+
+section code {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.82em;
+  background: var(--pp-bg2);
+  color: var(--pp-h2);
+  border: 1px solid var(--pp-border);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+section pre {
+  background: var(--pp-bg2);
+  border-left: 4px solid var(--pp-accent);
+  border-radius: 6px;
+  padding: 0.9em 1.1em;
+  margin: 0.5em 0;
+  border: 1px solid var(--pp-border);
+  border-left: 4px solid var(--pp-accent);
+}
+
+section pre code { background: none; color: var(--pp-text); border: none; padding: 0; font-size: 0.78em; line-height: 1.55; }
+
+section blockquote {
+  border-left: 4px solid var(--pp-accent);
+  background: var(--pp-surface);
+  color: var(--pp-muted);
+  padding: 0.6em 1.1em;
+  margin: 0.8em 0;
+  border-radius: 0 6px 6px 0;
+  font-style: italic;
+  border: 1px solid var(--pp-border);
+  border-left: 4px solid var(--pp-accent);
+}
+
+section table { border-collapse: collapse; width: 100%; font-size: 0.83em; margin-bottom: 0.8em; }
+section th { background: var(--pp-bg2); color: var(--pp-h2); padding: 8px 14px; font-weight: 700; text-align: left; border-bottom: 2px solid var(--pp-accent); }
+section td { padding: 7px 14px; border-bottom: 1px solid var(--pp-border); color: var(--pp-text); }
+section tr:nth-child(even) td { background: var(--pp-surface); }
+
+section a { color: var(--pp-h2); text-decoration: none; border-bottom: 1px solid rgba(180, 83, 9, 0.3); }
+section hr { border: none; border-top: 1.5px solid var(--pp-border); margin: 0.8em 0; }
+section header, section footer { color: var(--pp-muted); font-size: 0.65em; }
+section::after { color: var(--pp-muted); font-size: 0.65em; }

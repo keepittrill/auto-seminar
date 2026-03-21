@@ -893,6 +893,10 @@ THEME_META: dict[str, tuple[str, str, list[str]]] = {
     "sky":           ("Sky",           "스카이 · 비비드 블루",      ["#075985", "#7dd3fc", "#38bdf8", "#bae6fd", "#e0f2fe"]),
     "grape":         ("Grape",         "그레이프 · 미디엄 퍼플",    ["#4c1d95", "#e9d5ff", "#c4b5fd", "#f9a8d4", "#ede9fe"]),
     "coffee":        ("Coffee",        "커피 · 에스프레소 웜",      ["#78350f", "#fde68a", "#fdba74", "#fbbf24", "#fef3c7"]),
+    # ── 라이트 (밝은 배경 + 진한 글자) ──────────────────────────────────────
+    "slate":         ("Slate",         "슬레이트 · 화이트+인디고",  ["#f8fafc", "#1e293b", "#6366f1", "#3730a3", "#e2e8f0"]),
+    "lavender":      ("Lavender",      "라벤더 · 라이트 퍼플",      ["#faf5ff", "#3b0764", "#a855f7", "#7e22ce", "#ede9fe"]),
+    "paper":         ("Paper",         "페이퍼 · 스톤+앰버",        ["#fafaf9", "#1c1917", "#f59e0b", "#b45309", "#e7e5e4"]),
 }
 
 
