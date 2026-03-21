@@ -292,15 +292,15 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
 .ts-dot{{width:8px;height:8px;border-radius:50%;flex-shrink:0}}
 .ts-label{{font-size:.73rem;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
 #ts-layout-grid{{display:flex;gap:5px;margin-bottom:10px}}
-#ts-bg-grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:10px}}
-.ts-bg-item{{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px;
+#ts-bg-grid{{display:grid;grid-template-columns:repeat(2,1fr);gap:5px;margin-bottom:10px}}
+.ts-bg-item{{display:flex;align-items:center;gap:7px;padding:6px 8px;
   border-radius:7px;border:1px solid transparent;cursor:pointer;
   background:rgba(255,255,255,.04);transition:all .15s;color:#ccc}}
 .ts-bg-item:hover{{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.14)}}
 .ts-bg-item.ts-active{{background:rgba(120,100,220,.25);border-color:rgba(150,130,255,.5);color:#fff}}
-.ts-bg-preview{{width:36px;height:24px;border-radius:4px;border:1px solid rgba(255,255,255,.15);
-  background-color:#444;flex-shrink:0}}
-.ts-bg-name{{font-size:.63rem;font-weight:600}}
+.ts-bg-preview{{width:32px;height:22px;border-radius:4px;border:1px solid rgba(255,255,255,.25);
+  flex-shrink:0}}
+.ts-bg-name{{font-size:.71rem;font-weight:600}}
 .ts-ly{{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
   padding:6px 4px;border-radius:7px;border:1px solid transparent;cursor:pointer;
   background:rgba(255,255,255,.04);transition:all .15s;color:#ccc}}
@@ -364,30 +364,25 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
 <script>
 (function(){{
   const THEMES = {themes_js};
+  // type:'none' | 'image' (overlay pattern) | 'wash' (full bg replace)
   const PATTERNS = {{
-    'none':     {{label:'없음',    preview:'background:none',        css:''}},
-    'dots':     {{label:'점무늬',  preview:'background-image:radial-gradient(circle,rgba(200,200,200,.7) 1.5px,transparent 1.5px);background-size:8px 8px;background-color:#444',
-                  css:'section{{background-image:radial-gradient(circle,rgba(127,127,127,.18) 1.5px,transparent 1.5px)!important;background-size:22px 22px!important}}'}},
-    'grid':     {{label:'격자',    preview:'background-image:linear-gradient(rgba(200,200,200,.5) 1px,transparent 1px),linear-gradient(90deg,rgba(200,200,200,.5) 1px,transparent 1px);background-size:8px 8px;background-color:#444',
-                  css:'section{{background-image:linear-gradient(rgba(127,127,127,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(127,127,127,.12) 1px,transparent 1px)!important;background-size:28px 28px!important}}'}},
-    'diagonal': {{label:'사선',    preview:'background-image:repeating-linear-gradient(45deg,rgba(200,200,200,.5) 0,rgba(200,200,200,.5) 1px,transparent 1px,transparent 7px);background-color:#444',
-                  css:'section{{background-image:repeating-linear-gradient(45deg,rgba(127,127,127,.12) 0,rgba(127,127,127,.12) 1px,transparent 1px,transparent 14px)!important}}'}},
-    'glow':     {{label:'글로우',  preview:'background-image:radial-gradient(ellipse 80% 70% at 0% 0%,rgba(150,100,255,.6) 0%,transparent 65%),radial-gradient(ellipse 70% 80% at 100% 100%,rgba(80,180,255,.5) 0%,transparent 65%);background-color:#1a1a2e',
-                  css:'section{{background-image:radial-gradient(ellipse 65% 55% at 0% 0%,rgba(255,255,255,.08) 0%,transparent 60%),radial-gradient(ellipse 55% 65% at 100% 100%,rgba(255,255,255,.08) 0%,transparent 60%)!important}}'}},
-    'circuit':  {{label:'회로망',  preview:'background-image:linear-gradient(rgba(200,200,200,.4) 1px,transparent 1px),linear-gradient(90deg,rgba(200,200,200,.4) 1px,transparent 1px),linear-gradient(rgba(200,200,200,.2) 1px,transparent 1px),linear-gradient(90deg,rgba(200,200,200,.2) 1px,transparent 1px);background-size:16px 16px,16px 16px,4px 4px,4px 4px;background-color:#444',
-                  css:'section{{background-image:linear-gradient(rgba(127,127,127,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(127,127,127,.1) 1px,transparent 1px),linear-gradient(rgba(127,127,127,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(127,127,127,.05) 1px,transparent 1px)!important;background-size:64px 64px,64px 64px,16px 16px,16px 16px!important}}'}},
-    'wash-sunset':  {{label:'🌅선셋', preview:'background:linear-gradient(135deg,#f97316,#ec4899,#a855f7)',
-                  css:'section{{background:linear-gradient(135deg,#c2410c 0%,#db2777 50%,#7c3aed 100%)!important}}'}},
-    'wash-ocean':   {{label:'🌊오션',  preview:'background:linear-gradient(135deg,#0ea5e9,#0d9488,#065f46)',
-                  css:'section{{background:linear-gradient(135deg,#075985 0%,#0f766e 50%,#064e3b 100%)!important}}'}},
-    'wash-forest':  {{label:'🌲숲',    preview:'background:linear-gradient(135deg,#14532d,#166534,#365314)',
-                  css:'section{{background:linear-gradient(135deg,#14532d 0%,#1a4731 50%,#365314 100%)!important}}'}},
-    'wash-white':   {{label:'🤍화이트', preview:'background:linear-gradient(135deg,#ffffff,#f8fafc,#f1f5f9)',
-                  css:'section{{background:linear-gradient(135deg,#ffffff 0%,#f8fafc 50%,#f1f5f9 100%)!important}}'}},
-    'wash-cream':   {{label:'🧈크림',   preview:'background:linear-gradient(135deg,#fffbeb,#fef3c7,#fde8d8)',
-                  css:'section{{background:linear-gradient(135deg,#fffbeb 0%,#fef9ee 50%,#fde8d8 100%)!important}}'}},
-    'wash-blossom': {{label:'🌸블로썸', preview:'background:linear-gradient(135deg,#fff0f6,#fce7f3,#ede9fe)',
-                  css:'section{{background:linear-gradient(135deg,#fff0f6 0%,#fce7f3 50%,#ede9fe 100%)!important}}'}},
+    'none':        {{label:'없음',     preview:'background:#555',          type:'none'}},
+    'dots':        {{label:'점무늬',   preview:'background-image:radial-gradient(circle,#bbb 1.5px,transparent 1.5px);background-size:7px 7px;background-color:#333',
+                    type:'image', image:'radial-gradient(circle,rgba(180,180,180,.55) 1.5px,transparent 1.5px)', size:'22px 22px'}},
+    'grid':        {{label:'격자',     preview:'background-image:linear-gradient(#aaa 1px,transparent 1px),linear-gradient(90deg,#aaa 1px,transparent 1px);background-size:8px 8px;background-color:#333',
+                    type:'image', image:'linear-gradient(rgba(180,180,180,.4) 1px,transparent 1px),linear-gradient(90deg,rgba(180,180,180,.4) 1px,transparent 1px)', size:'28px 28px'}},
+    'diagonal':    {{label:'사선',     preview:'background-image:repeating-linear-gradient(45deg,#aaa 0,#aaa 1px,transparent 1px,transparent 6px);background-color:#333',
+                    type:'image', image:'repeating-linear-gradient(45deg,rgba(180,180,180,.38) 0,rgba(180,180,180,.38) 1px,transparent 1px,transparent 14px)'}},
+    'glow':        {{label:'글로우',   preview:'background:radial-gradient(ellipse 80% 70% at 0% 0%,#7c3aed 0%,transparent 70%),radial-gradient(ellipse at 100% 100%,#0ea5e9 0%,transparent 70%),#111',
+                    type:'image', image:'radial-gradient(ellipse 65% 55% at 0% 0%,rgba(255,255,255,.13) 0%,transparent 60%),radial-gradient(ellipse 55% 65% at 100% 100%,rgba(255,255,255,.13) 0%,transparent 60%)'}},
+    'circuit':     {{label:'회로망',   preview:'background-image:linear-gradient(#888 1px,transparent 1px),linear-gradient(90deg,#888 1px,transparent 1px),linear-gradient(#555 1px,transparent 1px),linear-gradient(90deg,#555 1px,transparent 1px);background-size:14px 14px,14px 14px,3px 3px,3px 3px;background-color:#222',
+                    type:'image', image:'linear-gradient(rgba(180,180,180,.22) 1px,transparent 1px),linear-gradient(90deg,rgba(180,180,180,.22) 1px,transparent 1px),linear-gradient(rgba(180,180,180,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(180,180,180,.1) 1px,transparent 1px)', size:'64px 64px,64px 64px,16px 16px,16px 16px'}},
+    'wash-sunset':  {{label:'🌅 선셋',  preview:'background:linear-gradient(135deg,#f97316,#ec4899,#a855f7)',  type:'wash', bg:'linear-gradient(135deg,#c2410c 0%,#db2777 50%,#7c3aed 100%)'}},
+    'wash-ocean':   {{label:'🌊 오션',  preview:'background:linear-gradient(135deg,#0ea5e9,#0d9488,#065f46)',  type:'wash', bg:'linear-gradient(135deg,#075985 0%,#0f766e 50%,#064e3b 100%)'}},
+    'wash-forest':  {{label:'🌲 숲',    preview:'background:linear-gradient(135deg,#166534,#14532d,#365314)',  type:'wash', bg:'linear-gradient(135deg,#14532d 0%,#1a4731 50%,#365314 100%)'}},
+    'wash-white':   {{label:'🤍 화이트',preview:'background:linear-gradient(135deg,#ffffff,#f1f5f9);border:1px solid #ccc', type:'wash', bg:'linear-gradient(135deg,#ffffff 0%,#f8fafc 50%,#f1f5f9 100%)'}},
+    'wash-cream':   {{label:'🧈 크림',  preview:'background:linear-gradient(135deg,#fffbeb,#fde8d8)',          type:'wash', bg:'linear-gradient(135deg,#fffbeb 0%,#fef9ee 50%,#fde8d8 100%)'}},
+    'wash-blossom': {{label:'🌸 블로썸',preview:'background:linear-gradient(135deg,#fce7f3,#ede9fe)',          type:'wash', bg:'linear-gradient(135deg,#fff0f6 0%,#fce7f3 50%,#ede9fe 100%)'}},
   }};
   const LAYOUTS = {{
     'default':{{label:'기본', desc:'32px',css:''}},
@@ -430,10 +425,24 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
   }}
 
   function applyPattern(name) {{
-    let el = document.getElementById('as-bg-css');
-    if (!el) {{ el = document.createElement('style'); el.id = 'as-bg-css'; document.head.appendChild(el); }}
+    // Clear previous inline styles from all Marp sections
+    document.querySelectorAll('section[data-theme]').forEach(sec => {{
+      sec.style.removeProperty('background');
+      sec.style.removeProperty('background-image');
+      sec.style.removeProperty('background-size');
+      sec.style.removeProperty('background-color');
+    }});
     const p = PATTERNS[name];
-    el.textContent = (p && p.css) ? p.css : '';
+    if (p && p.type !== 'none') {{
+      document.querySelectorAll('section[data-theme]').forEach(sec => {{
+        if (p.type === 'wash') {{
+          sec.style.setProperty('background', p.bg, 'important');
+        }} else if (p.type === 'image') {{
+          sec.style.setProperty('background-image', p.image, 'important');
+          if (p.size) sec.style.setProperty('background-size', p.size, 'important');
+        }}
+      }});
+    }}
     currentPattern = name;
     localStorage.setItem('as-bg-pattern', name);
     renderPatternButtons();
