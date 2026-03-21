@@ -831,14 +831,35 @@ def _boost_override_css(css: str) -> str:
     덮어쓰지 못한다. !important를 추가하면 특이도 우선순위를 우회한다.
     패턴 시스템은 element.style.setProperty(..., 'important')로 inline !important를
     사용하므로 테마 !important보다 우선한다.
+
+    gradient-dark / aurora 처럼 h1에 -webkit-text-fill-color: transparent 를 쓰는
+    테마가 초기 테마일 경우, 다른 테마로 전환해도 Marp 내장 CSS의 transparent가
+    잔류해 텍스트가 투명해지는 버그를 방지하기 위해:
+    - 각 override 앞에 reset 블록 주입 (unset !important)
+    - -webkit-text-fill-color 등 그라디언트 텍스트 관련 속성도 !important 처리
     """
-    # (?<![a-zA-Z-]) = 앞에 글자/하이픈 없음 → print-color-adjust 같은 다른 속성 제외
-    # [^;!\n{]+ = 이미 !important 있거나 줄바꿈/블록인 경우 제외
-    return re.sub(
+    # 1. color/background 계열 !important
+    css = re.sub(
         r'(?<![a-zA-Z-])(background(?:-color)?|color)(?![a-zA-Z-])(\s*:)(\s*)([^;!\n{]+?)\s*;',
         r'\1\2\3\4 !important;',
         css,
     )
+    # 2. 그라디언트 텍스트 관련 속성 !important
+    css = re.sub(
+        r'(-webkit-text-fill-color|-webkit-background-clip|background-clip)(\s*:)(\s*)([^;!\n{]+?)\s*;',
+        r'\1\2\3\4 !important;',
+        css,
+    )
+    # 3. 모든 override 앞에 reset 블록 주입
+    #    초기 테마의 -webkit-text-fill-color: transparent 잔류 방지
+    reset = (
+        "/* as-override-reset: clear gradient-text from initial theme */\n"
+        "h1,h2,h3,h4,h5,h6{"
+        "-webkit-text-fill-color:unset!important;"
+        "-webkit-background-clip:unset!important;"
+        "background-clip:unset!important;}\n"
+    )
+    return reset + css
 
 
 def _inject_theme_switcher(html_path: pathlib.Path, active_theme: str, active_layout: str = "default", original_md: str = "") -> None:
