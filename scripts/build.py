@@ -1503,6 +1503,18 @@ def _gh_tree_to_api(dir_url: str) -> "str | None":
     return f"https://api.github.com/repos/{owner}/{repo}/contents/{path}?ref={branch}"
 
 
+def _gh_auth_headers() -> dict:
+    """REMOTE_SLIDES_TOKEN 환경변수가 있으면 Authorization 헤더 반환."""
+    token = os.environ.get("REMOTE_SLIDES_TOKEN", "").strip()
+    headers: dict = {
+        "Accept": "application/vnd.github+json",
+        "User-Agent": "auto-seminar/1.5",
+    }
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    return headers
+
+
 def _list_remote_dir(dir_url: str, pattern: str = "*.md") -> list[dict]:
     """GitHub tree URL의 파일 목록 fetch (Contents API).
 
@@ -1515,13 +1527,7 @@ def _list_remote_dir(dir_url: str, pattern: str = "*.md") -> list[dict]:
         return []
 
     try:
-        req = urllib.request.Request(
-            api_url,
-            headers={
-                "Accept": "application/vnd.github+json",
-                "User-Agent": "auto-seminar/1.5",
-            },
-        )
+        req = urllib.request.Request(api_url, headers=_gh_auth_headers())
         with urllib.request.urlopen(req, timeout=15) as resp:
             data = json.loads(resp.read().decode("utf-8"))
     except Exception as e:
@@ -1578,7 +1584,8 @@ def fetch_remote_slide(entry: dict, config: dict) -> "pathlib.Path | None":
     out_path = SLIDES_DIR / f"_remote_{stem}.md"
 
     try:
-        with urllib.request.urlopen(raw_url, timeout=15) as resp:
+        req = urllib.request.Request(raw_url, headers=_gh_auth_headers())
+        with urllib.request.urlopen(req, timeout=15) as resp:
             raw_bytes = resp.read()
         try:
             text = raw_bytes.decode("utf-8")

@@ -56,6 +56,8 @@ jobs:
 
       - name: Build slides
         run: python scripts/build.py
+        env:
+          REMOTE_SLIDES_TOKEN: ${{ secrets.REMOTE_SLIDES_TOKEN }}
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
