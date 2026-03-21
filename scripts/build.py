@@ -422,19 +422,19 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
     const p = HLJS_PALETTES[THEME_HLJS[name]];
     if (!p) return '';
     return [
-      'section code.hljs{{color:inherit;background:transparent}}',
-      'section .hljs-keyword,section .hljs-selector-tag,section .hljs-tag{{color:'+p.kw+';font-weight:600}}',
-      'section .hljs-string,section .hljs-selector-attr,section .hljs-addition{{color:'+p.str+'}}',
-      'section .hljs-comment,section .hljs-quote{{color:'+p.cm+';font-style:italic}}',
-      'section .hljs-number,section .hljs-literal,section .hljs-symbol,section .hljs-bullet{{color:'+p.num+'}}',
-      'section .hljs-built_in,section .hljs-selector-pseudo{{color:'+p.bi+'}}',
-      'section .hljs-title,section .hljs-section,section .hljs-name,section .hljs-type{{color:'+p.fn+';font-weight:600}}',
-      'section .hljs-attribute{{color:'+p.at+'}}',
-      'section .hljs-operator,section .hljs-punctuation{{color:'+p.op+'}}',
-      'section .hljs-variable,section .hljs-template-variable{{color:'+p.bi+'}}',
-      'section .hljs-regexp{{color:'+p.str+'}}',
-      'section .hljs-meta,section .hljs-meta .hljs-keyword{{color:'+p.cm+'}}',
-      'section .hljs-deletion{{color:#ff5555}}',
+      'section code.hljs{{color:inherit!important;background:transparent!important}}',
+      'section .hljs-keyword,section .hljs-selector-tag,section .hljs-tag{{color:'+p.kw+'!important;font-weight:600!important}}',
+      'section .hljs-string,section .hljs-selector-attr,section .hljs-addition{{color:'+p.str+'!important}}',
+      'section .hljs-comment,section .hljs-quote{{color:'+p.cm+'!important;font-style:italic!important}}',
+      'section .hljs-number,section .hljs-literal,section .hljs-symbol,section .hljs-bullet{{color:'+p.num+'!important}}',
+      'section .hljs-built_in,section .hljs-selector-pseudo{{color:'+p.bi+'!important}}',
+      'section .hljs-title,section .hljs-section,section .hljs-name,section .hljs-type{{color:'+p.fn+'!important;font-weight:600!important}}',
+      'section .hljs-attribute{{color:'+p.at+'!important}}',
+      'section .hljs-operator,section .hljs-punctuation{{color:'+p.op+'!important}}',
+      'section .hljs-variable,section .hljs-template-variable{{color:'+p.bi+'!important}}',
+      'section .hljs-regexp{{color:'+p.str+'!important}}',
+      'section .hljs-meta,section .hljs-meta .hljs-keyword{{color:'+p.cm+'!important}}',
+      'section .hljs-deletion{{color:#ff5555!important}}',
     ].join('');
   }}
   const INIT_THEME  = '{active_theme}';
