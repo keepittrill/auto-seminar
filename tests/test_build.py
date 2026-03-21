@@ -191,3 +191,69 @@ class TestThemeMeta:
         ]
         for t in expected:
             assert t in B.THEME_META, f"'{t}' 테마가 THEME_META에 없음"
+
+
+# ─────────────────────────────────────────────────────────────────
+# Remote slide helpers
+# ─────────────────────────────────────────────────────────────────
+
+class TestGhBlobToRaw:
+    def test_blob_url_converted(self):
+        blob = "https://github.com/keepittrill/sw-learning/blob/main/topics/notes.md"
+        raw  = B._gh_blob_to_raw(blob)
+        assert raw == "https://raw.githubusercontent.com/keepittrill/sw-learning/main/topics/notes.md"
+
+    def test_already_raw_passthrough(self):
+        url = "https://raw.githubusercontent.com/keepittrill/sw-learning/main/notes.md"
+        assert B._gh_blob_to_raw(url) == url
+
+    def test_non_github_url_passthrough(self):
+        url = "https://example.com/some/path/file.md"
+        assert B._gh_blob_to_raw(url) == url
+
+    def test_deep_path(self):
+        blob = "https://github.com/org/repo/blob/feature/branch/deep/path/file.md"
+        raw  = B._gh_blob_to_raw(blob)
+        assert raw == "https://raw.githubusercontent.com/org/repo/feature/branch/deep/path/file.md"
+
+
+class TestRewriteImagePaths:
+    BASE = "https://raw.githubusercontent.com/owner/repo/main/docs"
+
+    def test_relative_dot_slash(self):
+        body = "![alt](./img/foo.png)"
+        result = B._rewrite_image_paths(body, self.BASE)
+        assert result == "![alt](https://raw.githubusercontent.com/owner/repo/main/docs/img/foo.png)"
+
+    def test_bare_relative(self):
+        body = "![alt](img/foo.png)"
+        result = B._rewrite_image_paths(body, self.BASE)
+        assert "raw.githubusercontent.com" in result
+        assert "img/foo.png" in result
+
+    def test_parent_relative(self):
+        body = "![alt](../assets/img.png)"
+        result = B._rewrite_image_paths(body, self.BASE)
+        assert result == "![alt](https://raw.githubusercontent.com/owner/repo/main/assets/img.png)"
+
+    def test_absolute_https_unchanged(self):
+        body = "![alt](https://example.com/img.png)"
+        assert B._rewrite_image_paths(body, self.BASE) == body
+
+    def test_absolute_protocol_relative_unchanged(self):
+        body = "![alt](//cdn.example.com/img.png)"
+        assert B._rewrite_image_paths(body, self.BASE) == body
+
+    def test_multiple_images(self):
+        body = "![a](./a.png) text ![b](https://x.com/b.png)"
+        result = B._rewrite_image_paths(body, self.BASE)
+        assert "raw.githubusercontent.com" in result
+        assert "https://x.com/b.png" in result
+
+
+class TestFetchAllRemoteSlides:
+    def test_empty_config_returns_empty(self):
+        assert B.fetch_all_remote_slides({}) == []
+
+    def test_no_remote_slides_key(self):
+        assert B.fetch_all_remote_slides({"theme": "catppuccin"}) == []

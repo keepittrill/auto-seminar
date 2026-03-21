@@ -17,6 +17,8 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import urllib.parse
+import urllib.request
 
 import yaml
 
@@ -820,6 +822,24 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
 </script>"""
 
 
+def _boost_override_css(css: str) -> str:
+    """Override theme CSS의 color/background 선언에 !important를 추가.
+
+    Marp CLI가 고-특이도 선택자 (div#\\:\\$p > svg > foreignObject > section)로
+    테마 CSS를 내장하기 때문에, 낮은 특이도(section {})의 override 테마가 색상을
+    덮어쓰지 못한다. !important를 추가하면 특이도 우선순위를 우회한다.
+    패턴 시스템은 element.style.setProperty(..., 'important')로 inline !important를
+    사용하므로 테마 !important보다 우선한다.
+    """
+    # (?<![a-zA-Z-]) = 앞에 글자/하이픈 없음 → print-color-adjust 같은 다른 속성 제외
+    # [^;!\n{]+ = 이미 !important 있거나 줄바꿈/블록인 경우 제외
+    return re.sub(
+        r'(?<![a-zA-Z-])(background(?:-color)?|color)(?![a-zA-Z-])(\s*:)(\s*)([^;!\n{]+?)\s*;',
+        r'\1\2\3\4 !important;',
+        css,
+    )
+
+
 def _inject_theme_switcher(html_path: pathlib.Path, active_theme: str, active_layout: str = "default", original_md: str = "") -> None:
     """Marp 생성 HTML에 테마+레이아웃 스위처 UI를 후처리로 주입.
 
@@ -843,9 +863,12 @@ def _inject_theme_switcher(html_path: pathlib.Path, active_theme: str, active_la
             )
 
     # 2. themes/*.css 전체를 override 레이어로 embed (초기에는 모두 비활성)
+    # Marp이 내장 CSS에 고-특이도 선택자(div#\:\$p > svg > foreignObject > section)를
+    # 사용하므로, override 테마 CSS의 color/background 선언에 !important를 추가해야
+    # 낮은 특이도(section {})로도 Marp 내장 스타일을 덮어쓸 수 있다.
     override_styles = []
     for css_file in sorted(THEMES_DIR.glob("*.css")):
-        css = css_file.read_text(encoding="utf-8")
+        css = _boost_override_css(css_file.read_text(encoding="utf-8"))
         override_styles.append(
             f'<style data-theme="{css_file.stem}" media="none">\n{css}\n</style>'
         )
@@ -1450,6 +1473,95 @@ function copyTheme(key, btn) {{
 # Main
 # ─────────────────────────────────────────────────────────────────────────────
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Remote slide fetching
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _gh_blob_to_raw(url: str) -> str:
+    """GitHub blob URL → raw.githubusercontent.com URL."""
+    m = re.match(r"https://github\.com/([^/]+/[^/]+)/blob/(.+)", url)
+    if m:
+        return f"https://raw.githubusercontent.com/{m.group(1)}/{m.group(2)}"
+    return url
+
+
+def _rewrite_image_paths(body: str, raw_base: str) -> str:
+    """상대경로 이미지 참조를 절대 raw URL로 변환."""
+    def replace(m: re.Match) -> str:
+        alt, path = m.group(1), m.group(2)
+        if path.startswith("https://") or path.startswith("http://") or path.startswith("//"):
+            return m.group(0)
+        abs_url = urllib.parse.urljoin(raw_base + "/", path)
+        return f"![{alt}]({abs_url})"
+    return re.sub(r"!\[([^\]]*)\]\(([^)]+)\)", replace, body)
+
+
+def fetch_remote_slide(entry: dict, config: dict) -> "pathlib.Path | None":
+    """단일 remote_slides 항목을 fetch → slides/_remote_<stem>.md 저장."""
+    url = entry.get("url", "").strip()
+    if not url:
+        print("⚠  remote_slides 항목에 url이 없음 — skip", file=sys.stderr)
+        return None
+
+    raw_url = _gh_blob_to_raw(url)
+    # raw_base: 파일명을 제거한 디렉터리 경로 (상대 이미지 기준)
+    raw_base = raw_url.rsplit("/", 1)[0]
+
+    # stem 결정
+    stem = entry.get("stem", "").strip()
+    if not stem:
+        stem = pathlib.Path(urllib.parse.urlparse(raw_url).path).stem
+
+    out_path = SLIDES_DIR / f"_remote_{stem}.md"
+
+    try:
+        with urllib.request.urlopen(raw_url, timeout=15) as resp:
+            raw_bytes = resp.read()
+        try:
+            text = raw_bytes.decode("utf-8")
+        except UnicodeDecodeError:
+            text = raw_bytes.decode("utf-8", errors="replace")
+    except Exception as e:
+        print(f"⚠  remote fetch 실패 ({url}): {e} — skip", file=sys.stderr)
+        return None
+
+    # frontmatter 분리 후 config 레벨 seminar_* 키 병합
+    fm, body = split_fm(text)
+    for key in ("seminar_theme", "seminar_title", "seminar_visible"):
+        if key in entry and key not in fm:
+            fm[key] = entry[key]
+
+    # 상대 이미지 경로 → 절대 raw URL
+    body = _rewrite_image_paths(body, raw_base)
+
+    out_path.write_text(build_fm(fm, body) if fm else body, encoding="utf-8")
+    print(f"  ↓  remote  {url}  →  slides/_remote_{stem}.md")
+    return out_path
+
+
+def fetch_all_remote_slides(config: dict) -> list:
+    """remote_slides 목록 전체 fetch. 성공한 Path 리스트 반환."""
+    entries = config.get("remote_slides", [])
+    if not entries:
+        return []
+
+    seen_stems: set[str] = set()
+    paths: list[pathlib.Path] = []
+    for entry in entries:
+        stem = entry.get("stem", "").strip()
+        if not stem:
+            raw_url = _gh_blob_to_raw(entry.get("url", ""))
+            stem = pathlib.Path(urllib.parse.urlparse(raw_url).path).stem
+        if stem in seen_stems:
+            print(f"⚠  remote_slides stem 중복 '{stem}' — skip", file=sys.stderr)
+            continue
+        seen_stems.add(stem)
+        p = fetch_remote_slide(entry, config)
+        if p:
+            paths.append(p)
+    return paths
+
+
 def main() -> None:
     config = yaml.safe_load(CONFIG_PATH.read_text(encoding="utf-8")) or {}
 
@@ -1462,36 +1574,42 @@ def main() -> None:
             print(f"⚠  dist/ 삭제 중 잠긴 파일 발견 ({e.filename}) — 건너뜀", file=sys.stderr)
     DIST_DIR.mkdir(exist_ok=True)
 
-    md_files = sorted(
-        f for f in SLIDES_DIR.glob("*.md")
-        if not f.name.startswith("_build_") and f.name.lower() != "readme.md"
-    )
-    if not md_files:
-        print("⚠  No .md files found in slides/")
-        generate_landing([], config)
-        return
+    remote_paths = fetch_all_remote_slides(config)
 
-    print(f"Building {len(md_files)} slide(s)…")
-    seminars: list[dict] = []
-    for f in md_files:
-        info = build_slide(f, config)
-        if info:
-            seminars.append(info)
+    try:
+        md_files = sorted(
+            f for f in SLIDES_DIR.glob("*.md")
+            if not f.name.startswith("_build_") and f.name.lower() != "readme.md"
+        )
+        if not md_files:
+            print("⚠  No .md files found in slides/")
+            generate_landing([], config)
+            return
 
-    generate_landing(seminars, config)
-    build_theme_gallery()
+        print(f"Building {len(md_files)} slide(s)…")
+        seminars: list[dict] = []
+        for f in md_files:
+            info = build_slide(f, config)
+            if info:
+                seminars.append(info)
 
-    # Copy tools/ → dist/tools/
-    tools_src = ROOT / "tools"
-    if tools_src.exists():
-        tools_dst = DIST_DIR / "tools"
-        if tools_dst.exists():
-            shutil.rmtree(tools_dst)
-        shutil.copytree(tools_src, tools_dst)
-        print(f"           tools         → dist/tools/")
+        generate_landing(seminars, config)
+        build_theme_gallery()
 
-    print(f"\n✓ Done — {len(seminars)} built, landing page → dist/index.html")
-    print(f"           theme gallery  → dist/themes/index.html")
+        # Copy tools/ → dist/tools/
+        tools_src = ROOT / "tools"
+        if tools_src.exists():
+            tools_dst = DIST_DIR / "tools"
+            if tools_dst.exists():
+                shutil.rmtree(tools_dst)
+            shutil.copytree(tools_src, tools_dst)
+            print(f"           tools         → dist/tools/")
+
+        print(f"\n✓ Done — {len(seminars)} built, landing page → dist/index.html")
+        print(f"           theme gallery  → dist/themes/index.html")
+    finally:
+        for p in remote_paths:
+            p.unlink(missing_ok=True)
 
 
 if __name__ == "__main__":

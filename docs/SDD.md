@@ -616,14 +616,16 @@ VALID_THEMES = (
 
 Marp CLI는 HTML 출력 시 CSS를 **minify**합니다. 이 과정에서 `/* @theme name */` 주석이 제거되어 어느 `<style>` 태그가 테마 CSS인지 정규식으로 식별할 수 없습니다.
 
-#### 해결: CSS cascade override 방식
+#### 해결: CSS cascade override + !important 방식
 
 ```
-Marp 내장 CSS (위치: <head> 초반)   → 기본 렌더링 담당
-override 레이어 (위치: </head> 직전) → media="" 활성화 시 cascade로 덮어씀
+Marp 내장 CSS (위치: <head> 초반)   → 고-특이도 선택자로 기본 렌더링 담당
+override 레이어 (위치: </head> 직전) → !important로 특이도 우회 후 덮어씀
 ```
 
-HTML에서 나중에 등장하는 CSS가 같은 specificity에서 우선합니다. override 레이어는 항상 Marp 내장 CSS보다 뒤에 위치하므로 활성화 시 완전히 덮어씁니다.
+**특이도 문제 (v1.5에서 수정):** Marp CLI는 `div#\:\$p > svg > foreignObject > section { color: ... }` 같은 고-특이도 선택자로 CSS를 embed합니다. override 테마 CSS가 단순 `section { color: ... }`를 사용하면 특이도가 낮아 색상 교체가 동작하지 않습니다.
+
+**해결책:** `_boost_override_css()` 함수가 inject 전에 `color`/`background` 선언에 `!important`를 추가합니다. 패턴 시스템은 `element.style.setProperty(..., 'important')` (inline `!important`)를 사용하므로 여전히 테마 `!important`보다 우선합니다.
 
 #### `_inject_theme_switcher()` 구현
 
@@ -681,6 +683,38 @@ def _inject_theme_switcher(html_path, active_theme):
 
 테마 CSS 1개 ≈ 3KB × 6개 커스텀 테마 ≈ +18KB.
 현대 브라우저 환경에서 무시할 수준이며, 정적 서빙이므로 캐시됩니다.
+
+### 6.7 원격 GitHub MD 슬라이드 (v1.5 신규)
+
+#### 설계 결정
+
+Marp CLI는 로컬 파일만 받으므로 원격 MD를 직접 처리할 수 없습니다. 빌드 타임에 fetch → 임시 파일 저장 → 기존 파이프라인 통과 → 삭제 방식을 사용합니다.
+
+#### 추가 함수
+
+| 함수 | 역할 |
+|------|------|
+| `_gh_blob_to_raw(url)` | `github.com/.../blob/...` → `raw.githubusercontent.com/...` |
+| `_rewrite_image_paths(body, raw_base)` | 상대경로 이미지 → 절대 raw URL (urllib.parse.urljoin) |
+| `fetch_remote_slide(entry, config)` | URL fetch → `slides/_remote_<stem>.md` 저장 |
+| `fetch_all_remote_slides(config)` | 전체 목록 처리, stem 중복 감지 |
+
+#### `main()` 통합
+
+```python
+remote_paths = fetch_all_remote_slides(config)  # fetch
+try:
+    md_files = sorted(SLIDES_DIR.glob("*.md"), ...)  # _remote_*.md 자동 포함
+    ...  # 기존 빌드 루프
+finally:
+    for p in remote_paths: p.unlink(missing_ok=True)  # 임시 파일 정리
+```
+
+#### 에러 처리
+
+- URL 접근 불가(timeout/404) → 경고 + skip (전체 빌드 계속)
+- stem 중복 → 경고 + skip
+- private repo → 미지원 (token 키 추가 가능)
 
 ---
 
@@ -955,3 +989,4 @@ GitHub Actions는 Non-0 종료 코드 시 Step 실패로 처리하여 Pages 배�
 | 1.0.0 | 2026-03-12 | 초기 작성 (HTML 빌드, 테마 시스템, 랜딩 페이지, GitHub Pages 배포) |
 | 1.1.0 | 2026-03-13 | 내보내기 시스템 설계 추가 (섹션 5), 카드 구조 변경 (7.2), Chrome 탐지 설계, 오류 처리 섹션 신규 |
 | 1.2.0 | 2026-03-14 | 디렉터리 구조 갱신 (1.1), 데이터 흐름에 후처리 단계 추가 (1.2), 설계 결정 5건 추가 (1.3), 함수 목록 갱신 (2.1), 테마 스위처 설계 (6.6), create_theme.py 설계 (6.5), lint 동적 감지 (6.5) |
+| 1.5.0 | 2026-03-21 | 원격 GitHub MD 슬라이드 설계 (6.7), 테마 스위처 특이도 버그 수정 (6.6) |

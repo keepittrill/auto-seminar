@@ -1128,6 +1128,13 @@ theme: catppuccin
 # 기본값: "default"
 # 유효값: catppuccin | gradient-dark | minimal-white |
 #         tech-dark | ocean | corporate | default | gaia | uncover
+
+# remote_slides: 다른 GitHub repo의 MD를 URL만으로 슬라이드에 포함 (선택사항)
+# remote_slides:
+#   - url: https://github.com/<owner>/<repo>/blob/<branch>/<path>/file.md
+#     stem: my-slide      # 선택: 없으면 파일명 stem 자동 사용
+#     seminar_theme: ocean  # 선택
+#     seminar_title: "제목"  # 선택
 ```
 
 ### 7.2 다중 발표자 관리
@@ -1168,7 +1175,30 @@ theme: catppuccin
 
 > ℹ️ `slides/_draft.md` 처럼 `_`로 시작하는 파일은 `slides/*.md` glob에 **포함됩니다**. 완전 제외가 필요하면 파일을 `slides/` 밖으로 이동하세요.
 
-### 7.4 발표자 노트
+### 7.4 원격 GitHub MD 슬라이드
+
+다른 repo에 있는 MD 파일을 로컬에 복사하지 않고 URL만으로 빌드에 포함할 수 있습니다.
+
+```yaml
+# seminar.config.yml
+remote_slides:
+  - url: https://github.com/keepittrill/sw-learning/blob/main/topics/notes.md
+    stem: html-notes          # 선택 (없으면 파일명 stem 자동 사용)
+    seminar_theme: ocean      # 선택
+    seminar_title: "HTML 기초" # 선택
+```
+
+**동작 방식:**
+- 빌드 시 `slides/_remote_<stem>.md`로 임시 저장 → 기존 파이프라인 그대로 처리
+- 빌드 완료 후 임시 파일 자동 삭제 (git에 남지 않음)
+- 상대경로 이미지(`./img/foo.png`)는 raw GitHub URL로 자동 변환
+- URL 접근 불가 시 경고 출력 후 skip (전체 빌드는 계속됨)
+
+**제한:**
+- public repo만 지원 (private repo는 token 불필요)
+- 원격 파일 변경 시 자동 트리거 없음 (push할 때마다 다시 fetch)
+
+### 7.5 발표자 노트
 
 Marp는 HTML 주석을 발표자 노트로 처리합니다. 슬라이드 HTML에는 표시되지 않으며 인쇄 시에만 노출됩니다:
 
@@ -1185,7 +1215,7 @@ Marp는 HTML 주석을 발표자 노트로 처리합니다. 슬라이드 HTML에
 -->
 ```
 
-### 7.5 슬라이드 크기 및 비율
+### 7.6 슬라이드 크기 및 비율
 
 ```yaml
 ---
