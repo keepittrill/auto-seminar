@@ -1,6 +1,7 @@
 title: "세미나 모음"
 description: "MD 파일만 slides/ 에 추가하면 자동으로 슬라이드가 생성됩니다."
 theme: catppuccin
+# base_url: "https://<username>.github.io/<repo>"  # OG 메타태그 + QR 절대 URL용 (선택)
 
 # remote_slides: GitHub URL만으로 다른 repo의 MD를 슬라이드로 빌드
 # (모두 선택사항)

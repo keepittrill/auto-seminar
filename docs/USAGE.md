@@ -2,7 +2,7 @@
 
 **auto-seminar** — 마크다운 파일 하나로 발표 슬라이드를 자동 생성·배포합니다.
 
-**버전**: 1.1.0 | **최종 수정**: 2026-03-13
+**버전**: 1.6.0 | **최종 수정**: 2026-03-22
 
 > 이 문서는 일반 사용자 가이드(1~10절)와 개발자용 기술 레퍼런스(11절)로 구성됩니다.
 
@@ -16,7 +16,7 @@
 4. [테마 가이드](#4-테마-가이드) · [4.5 자동 생성](#45-이미지색상으로-테마-자동-생성-create-theme) · [4.6 이미지 삽입](#46-이미지미디어-삽입)
 5. [내보내기 (PDF / PPTX / PNG)](#5-내보내기-pdf--pptx--png)
 6. [로컬 개발](#6-로컬-개발)
-7. [고급 설정](#7-고급-설정)
+7. [고급 설정](#7-고급-설정) · [7.5 딥링크·QR·목차](#75-딥링크--qr코드--썸네일-목차-v16)
 8. [실전 예시](#8-실전-예시)
 9. [트러블슈팅](#9-트러블슈팅)
 10. [FAQ](#10-faq)
@@ -1129,6 +1129,10 @@ theme: catppuccin
 # 유효값: catppuccin | gradient-dark | minimal-white |
 #         tech-dark | ocean | corporate | default | gaia | uncover
 
+base_url: "https://<username>.github.io/<repo>"
+# OG 메타태그 절대 URL + 랜딩 QR코드 생성에 사용 (선택사항)
+# 미설정 시: og:url/og:image 태그 생략, QR은 상대경로로 동적 생성
+
 # remote_slides: 다른 GitHub repo의 MD를 URL만으로 슬라이드에 포함 (선택사항)
 # remote_slides:
 #   - url: https://github.com/<owner>/<repo>/blob/<branch>/<path>/file.md
@@ -1255,7 +1259,44 @@ remote_slides:
 
 > `REMOTE_SLIDES_TOKEN`이 없으면 public repo는 그대로 동작하고, private repo는 경고 후 skip됩니다.
 
-### 7.5 발표자 노트
+### 7.5 딥링크 / QR코드 / 썸네일 목차 (v1.6)
+
+#### 딥링크 (`?slide=N`)
+
+특정 슬라이드 URL을 직접 공유할 수 있습니다.
+
+```
+https://username.github.io/auto-seminar/my-slide/?slide=3
+```
+
+- 페이지 로드 시 자동으로 3번 슬라이드로 이동
+- 슬라이드를 넘기면 URL이 자동으로 업데이트됨 (`history.replaceState`)
+- 🎨 스위처 패널 → **🔗 현재 슬라이드 링크 복사** 버튼으로 현재 슬라이드 URL 원클릭 복사
+
+#### QR코드
+
+랜딩 페이지 각 세미나 카드에 **QR** 버튼이 있습니다.
+
+- 클릭하면 해당 슬라이드 URL의 QR코드를 모달 팝업으로 표시
+- `seminar.config.yml`에 `base_url` 설정 시 절대 URL QR 생성, 미설정 시 현재 페이지 기준 상대 URL 사용
+- **외부 연결**: QR 버튼 최초 클릭 시 `cdn.jsdelivr.net`에서 `qrcodejs@1.0.0` (약 14KB) 지연 로드
+
+> ⚠️ **오프라인 환경**: CDN 로드가 불가능하면 QR 코드가 표시되지 않습니다. 인터넷 연결이 필요합니다.
+
+#### 썸네일 목차 드로어
+
+🎨 스위처 패널 → **📑 목차** 섹션:
+
+- PNG 내보내기를 수행한 슬라이드는 썸네일 이미지로 표시
+- PNG가 없으면 슬라이드 번호 그리드로 폴백
+- 항목 클릭 시 해당 슬라이드로 즉시 이동
+- 현재 보고 있는 슬라이드 항목이 자동 하이라이트
+
+> 💡 썸네일을 사용하려면 PNG 내보내기 기능이 활성화되어야 합니다 (기본값: 활성).
+
+---
+
+### 7.6 발표자 노트
 
 Marp는 HTML 주석을 발표자 노트로 처리합니다. 슬라이드 HTML에는 표시되지 않으며 인쇄 시에만 노출됩니다:
 
@@ -1857,10 +1898,21 @@ section {
 
 **Q: Mermaid 다이어그램을 슬라이드에 쓸 수 있나요?**
 
-Marp는 기본적으로 Mermaid를 지원하지 않습니다. 대안:
-1. Mermaid를 별도 도구로 PNG로 렌더링 후 이미지로 삽입
-2. visualize 플러그인으로 다이어그램 HTML 생성 후 보조 자료로 활용
-3. Marp의 HTML 지원(`--html`)을 활용해 직접 SVG 삽입
+v1.5부터 Mermaid 다이어그램을 코드 블록으로 바로 작성할 수 있습니다.
+
+````markdown
+```mermaid
+graph TD
+  A[시작] --> B{조건}
+  B -->|Yes| C[처리]
+  B -->|No| D[종료]
+```
+````
+
+- HTML 발표 뷰에서 실시간 렌더링 (브라우저)
+- 테마 밝기에 맞춰 mermaid 테마 자동 선택
+- **외부 연결**: `cdn.jsdelivr.net`에서 `mermaid@11` 동적 로드 필요
+- PDF/PPTX는 미지원 → 브라우저 Ctrl+P 인쇄 권장
 
 ---
 
@@ -2169,7 +2221,11 @@ def generate_landing(seminars: list[dict], config: dict) -> None:
     (DIST_DIR / "index.html").write_text(html, encoding="utf-8")
 ```
 
-랜딩 페이지는 **순수 HTML/CSS**로 생성됩니다. 외부 CDN, 자바스크립트 의존성이 없습니다.
+랜딩 페이지는 **순수 HTML/CSS**로 생성됩니다.
+
+> **외부 CDN 연결 (조건부)**
+> - **QR코드**: QR 버튼 최초 클릭 시 `cdn.jsdelivr.net/npm/qrcodejs@1.0.0` 지연 로드
+> - 미클릭 시 외부 연결 없음. 인터넷 차단 환경에서는 QR 기능이 동작하지 않습니다.
 
 ---
 

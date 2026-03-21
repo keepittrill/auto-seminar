@@ -199,13 +199,14 @@ figcaption{{text-align:center;padding:8px;color:#64748b;font-size:.75rem}}
 # Theme switcher (post-processing)
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _build_switcher_html(active_theme: str, active_layout: str = "default", original_md: str = "") -> str:
+def _build_switcher_html(active_theme: str, active_layout: str = "default", original_md: str = "", png_count: int = 0, stem: str = "") -> str:
     """테마+레이아웃 스위처 플로팅 UI HTML + CSS + JS 문자열 반환."""
     themes_js = json.dumps(
         {k: {"label": v[0], "colors": v[2]} for k, v in THEME_META.items()},
         ensure_ascii=False,
     )
     orig_md_js = json.dumps(original_md, ensure_ascii=False).replace('</script>', '<\\/script>').replace('</Script>', '<\\/Script>')
+    stem_js = json.dumps(stem)
     return f"""<!-- auto-seminar theme switcher -->
 <div id="ts-root">
   <button id="ts-btn" title="테마·레이아웃 변경" aria-label="테마·레이아웃 변경">
@@ -249,6 +250,9 @@ def _build_switcher_html(active_theme: str, active_layout: str = "default", orig
       <button class="ts-ib" id="ts-img-bg">배경</button>
       <button class="ts-ib" id="ts-img-split">분할</button>
     </div>
+    <div class="ts-sh" style="margin-top:10px">📑 목차</div>
+    <div id="ts-toc"></div>
+    <button id="ts-link-btn">🔗 현재 슬라이드 링크 복사</button>
   </div>
 </div>
 <div id="ts-backdrop" hidden></div>
@@ -367,6 +371,15 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
   background:rgba(120,100,220,.3);color:#c4b5fd;cursor:pointer;font-size:.77rem;transition:background .2s}}
 #ts-dl:hover{{background:rgba(120,100,220,.5)}}
 #ts-drawer[hidden],#ts-backdrop[hidden]{{display:none!important}}
+#ts-toc{{max-height:220px;overflow-y:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:8px}}
+.ts-toc-item{{cursor:pointer;border-radius:5px;border:1px solid transparent;overflow:hidden;transition:all .15s;background:rgba(255,255,255,.04)}}
+.ts-toc-item img{{width:100%;display:block;aspect-ratio:16/9;object-fit:cover}}
+.ts-toc-item.ts-toc-active{{border-color:rgba(150,130,255,.7);box-shadow:0 0 0 1px rgba(150,130,255,.5)}}
+.ts-toc-num{{text-align:center;font-size:.6rem;color:rgba(255,255,255,.4);padding:2px 0}}
+.ts-toc-fb{{display:flex;align-items:center;justify-content:center;height:32px;font-size:.75rem;color:#aaa}}
+#ts-link-btn{{width:100%;padding:7px;border-radius:7px;border:none;background:rgba(60,120,220,.3);color:#93c5fd;cursor:pointer;font-size:.76rem;transition:background .2s;margin-top:6px}}
+#ts-link-btn:hover{{background:rgba(60,120,220,.5)}}
+#ts-link-btn.ts-copied{{background:rgba(60,180,100,.3);color:#86efac}}
 </style>
 <script>
 (function(){{
@@ -442,6 +455,8 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
   }}
   const INIT_THEME  = '{active_theme}';
   const INIT_LAYOUT = '{active_layout}';
+  const PNG_COUNT   = {png_count};
+  const STEM        = {stem_js};
   let current        = INIT_THEME;
   let currentLayout  = INIT_LAYOUT;
   let currentPattern = 'none';
@@ -611,7 +626,7 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
   const panel = document.getElementById('ts-panel');
   btn.onclick = (e) => {{
     e.stopPropagation(); panel.hidden = !panel.hidden;
-    if (!panel.hidden) {{ renderThemeButtons(); renderLayoutButtons(); renderPatternButtons(); }}
+    if (!panel.hidden) {{ renderThemeButtons(); renderLayoutButtons(); renderPatternButtons(); buildToc(); }}
   }};
   document.addEventListener('click', () => {{ panel.hidden = true; }});
   panel.addEventListener('click', e => e.stopPropagation());
@@ -630,6 +645,73 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
       setTimeout(() => {{ this.textContent = '📋 이 설정 복사'; this.classList.remove('ts-copied'); }}, 2000);
     }});
   }};
+
+  // ── 🔗 현재 슬라이드 링크 복사 ────────────────────────────────────────
+  document.getElementById('ts-link-btn').onclick = function() {{
+    var active = document.querySelector('svg.bespoke-marp-slide.bespoke-marp-active');
+    var all = Array.from(document.querySelectorAll('svg.bespoke-marp-slide'));
+    var idx = (active ? all.indexOf(active) : 0) + 1;
+    var url = location.origin + location.pathname + '?slide=' + idx;
+    var linkBtn = this;
+    (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(function() {{
+      linkBtn.textContent = '✓ 복사됨!'; linkBtn.classList.add('ts-copied');
+      setTimeout(function() {{ linkBtn.textContent = '🔗 현재 슬라이드 링크 복사'; linkBtn.classList.remove('ts-copied'); }}, 2000);
+    }}).catch(function() {{ prompt('링크를 복사하세요:', url); }});
+  }};
+
+  // ── 📑 썸네일 목차 ────────────────────────────────────────────────────
+  function buildToc() {{
+    var toc = document.getElementById('ts-toc');
+    if (!toc) return;
+    toc.innerHTML = '';
+    var activeEl = document.querySelector('svg.bespoke-marp-slide.bespoke-marp-active');
+    var allSlides = Array.from(document.querySelectorAll('svg.bespoke-marp-slide'));
+    var activeIdx = activeEl ? allSlides.indexOf(activeEl) : 0;
+    var total = PNG_COUNT > 0 ? PNG_COUNT : allSlides.length;
+    for (var i = 0; i < total; i++) {{
+      var item = document.createElement('div');
+      item.className = 'ts-toc-item' + (i === activeIdx ? ' ts-toc-active' : '');
+      if (PNG_COUNT > 0) {{
+        var num = String(i + 1).padStart(3, '0');
+        var img = document.createElement('img');
+        img.src = './png/' + STEM + '.' + num + '.png';
+        img.loading = 'lazy';
+        item.appendChild(img);
+      }} else {{
+        var fb = document.createElement('div');
+        fb.className = 'ts-toc-fb';
+        fb.textContent = i + 1;
+        item.appendChild(fb);
+      }}
+      var lbl = document.createElement('div');
+      lbl.className = 'ts-toc-num';
+      lbl.textContent = i + 1;
+      item.appendChild(lbl);
+      item.onclick = (function(n) {{
+        return function() {{ location.hash = '#' + (n + 1); panel.hidden = true; }};
+      }})(i);
+      toc.appendChild(item);
+    }}
+  }}
+
+  // ── MutationObserver: 슬라이드 전환 → URL 미러링 + 목차 하이라이트 ────
+  (new MutationObserver(function() {{
+    var active = document.querySelector('svg.bespoke-marp-slide.bespoke-marp-active');
+    var all = Array.from(document.querySelectorAll('svg.bespoke-marp-slide'));
+    var idx = active ? all.indexOf(active) : -1;
+    // URL 미러링
+    if (idx >= 0) {{
+      var newHash = '#' + (idx + 1);
+      if (location.hash !== newHash)
+        history.replaceState(null, '', location.pathname + location.search + newHash);
+    }}
+    // 목차 하이라이트
+    document.querySelectorAll('.ts-toc-item').forEach(function(el, i) {{
+      el.classList.toggle('ts-toc-active', i === idx);
+    }});
+    var activeItem = document.querySelector('.ts-toc-item.ts-toc-active');
+    if (activeItem) activeItem.scrollIntoView({{block:'nearest'}});
+  }})).observe(document.body, {{attributes:true, subtree:true, attributeFilter:['class']}});
 
   // 초기 hljs 적용 (현재 테마 기준)
   (function() {{
@@ -942,7 +1024,7 @@ def _inject_mermaid_support(html: str, active_theme: str) -> str:
     return html.replace("</body>", script + "\n</body>", 1)
 
 
-def _inject_theme_switcher(html_path: pathlib.Path, active_theme: str, active_layout: str = "default", original_md: str = "") -> None:
+def _inject_theme_switcher(html_path: pathlib.Path, active_theme: str, active_layout: str = "default", original_md: str = "", meta: dict | None = None) -> None:
     """Marp 생성 HTML에 테마+레이아웃 스위처 UI를 후처리로 주입.
 
     전략: Marp이 내장 CSS를 minify하면서 /* @theme */ 주석을 삭제하므로
@@ -951,8 +1033,37 @@ def _inject_theme_switcher(html_path: pathlib.Path, active_theme: str, active_la
     CSS cascade 순서 상 이 스타일들은 Marp 내장 CSS 이후에 위치하므로,
     media=""로 활성화하면 Marp 내장 CSS를 덮어쓴다.
     원래 테마로 복귀할 때는 override를 비활성화하면 Marp 내장 CSS가 복원된다.
+    meta: {"stem", "title", "desc", "base_url", "png_count"} — OG 태그 + 목차용
     """
     html = html_path.read_text(encoding="utf-8")
+
+    # 0. OG 메타태그 주입 (base_url 설정 시)
+    if meta:
+        base_url = meta.get("base_url", "").rstrip("/")
+        stem_m   = meta.get("stem", "")
+        og_tags  = []
+        title_m  = meta.get("title", "")
+        desc_m   = meta.get("desc", "")
+        if title_m:
+            og_tags.append(f'<meta property="og:title" content="{title_m}">')
+        if desc_m:
+            og_tags.append(f'<meta property="og:description" content="{desc_m}">')
+        if base_url and stem_m:
+            og_tags.append(f'<meta property="og:url" content="{base_url}/{stem_m}/">')
+            if meta.get("png_count", 0) > 0:
+                og_tags.append(f'<meta property="og:image" content="{base_url}/{stem_m}/png/{stem_m}.001.png">')
+        if og_tags:
+            html = html.replace("</head>", "\n".join(og_tags) + "\n</head>", 1)
+
+    # 0b. 딥링크 스크립트: ?slide=N → #N (</head> 직전, bespoke.js보다 먼저 실행)
+    deeplink_script = (
+        '<script>(function(){'
+        'var s=new URLSearchParams(location.search).get("slide");'
+        'if(s&&/^\\d+$/.test(s)&&!location.hash)'
+        'history.replaceState(null,"",location.pathname+location.search+"#"+s);'
+        '})()</script>'
+    )
+    html = html.replace("</head>", deeplink_script + "\n</head>", 1)
 
     # 1. 초기 레이아웃 CSS 주입 (default가 아닐 때만)
     if active_layout != "default":
@@ -977,7 +1088,9 @@ def _inject_theme_switcher(html_path: pathlib.Path, active_theme: str, active_la
     html = html.replace("</head>", "\n".join(override_styles) + "\n</head>", 1)
 
     # 3. 스위처 UI 주입 (</body> 직전) — origMd를 함수 인자로 전달해 IIFE 내부에 직접 embed
-    html = html.replace("</body>", _build_switcher_html(active_theme, active_layout, original_md) + "\n</body>", 1)
+    _png_count = meta.get("png_count", 0) if meta else 0
+    _stem      = meta.get("stem", "")    if meta else ""
+    html = html.replace("</body>", _build_switcher_html(active_theme, active_layout, original_md, _png_count, _stem) + "\n</body>", 1)
 
     # 4. Mermaid 지원 주입 (mermaid 블록이 있을 때만)
     if "language-mermaid" in html:
@@ -1018,6 +1131,7 @@ def build_slide(md_path: pathlib.Path, config: dict) -> dict | None:
         f.write(content)
         tmp = pathlib.Path(f.name)
 
+    exports: dict = {}
     try:
         # ── HTML ─────────────────────────────────────────────────────────────
         ok = _marp([
@@ -1027,13 +1141,20 @@ def build_slide(md_path: pathlib.Path, config: dict) -> dict | None:
         ], stem)
         if not ok:
             return None
-        _inject_theme_switcher(out_html, seminar_theme, seminar_layout, text)
         print(f"  ✓  {stem}  →  dist/{stem}/index.html")
 
         # ── PDF / PPTX / PNG ─────────────────────────────────────────────────
         exports = build_exports(tmp, stem, out_dir)
     finally:
         tmp.unlink(missing_ok=True)
+
+    _inject_theme_switcher(out_html, seminar_theme, seminar_layout, text, meta={
+        "stem":      stem,
+        "title":     seminar_title,
+        "desc":      first_desc(body),
+        "base_url":  config.get("base_url", ""),
+        "png_count": exports.get("png_count", 0),
+    })
 
     # ── assets 복사 (slides/assets/ → dist/<stem>/assets/) ─────────────────
     assets_src = SLIDES_DIR / "assets"
@@ -1132,6 +1253,8 @@ def _seminar_card(s: dict) -> str:
         )
     dl_html = "\n              ".join(dl_parts)
 
+    qr_data = s['url'].lstrip('./')
+
     return f"""\
         <div class="card">
           <a class="card-body" href="{s['url']}">
@@ -1143,6 +1266,7 @@ def _seminar_card(s: dict) -> str:
             <span class="n-slides">{s['slides']} slides</span>
             <div class="card-actions">
               <a class="go-btn" href="{s['url']}">발표 시작 →</a>
+              <button class="qr-btn" data-path="{qr_data}" data-title="{s['title']}">QR</button>
               {dl_html}
             </div>
           </div>
@@ -1246,6 +1370,34 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; }
 .dl-pdf  { background: rgba(239,68,68,.15);  color: #fca5a5; border: 1px solid rgba(239,68,68,.35); }
 .dl-pptx { background: rgba(249,115,22,.15); color: #fdba74; border: 1px solid rgba(249,115,22,.35); }
 .dl-png  { background: rgba(34,197,94,.15);  color: #86efac; border: 1px solid rgba(34,197,94,.35); }
+
+/* QR 버튼 */
+.qr-btn {
+  font-size: .7rem; font-weight: 600; padding: 3px 9px; border-radius: 5px;
+  background: rgba(99,102,241,.15); color: #a5b4fc; border: 1px solid rgba(99,102,241,.35);
+  cursor: pointer; transition: opacity .15s; white-space: nowrap;
+}
+.qr-btn:hover { opacity: .75; }
+
+/* QR 모달 */
+#qr-modal { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; }
+#qr-modal[hidden] { display: none !important; }
+#qr-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.6); cursor: pointer; }
+#qr-box {
+  position: relative; background: #1e1e2e; border: 1px solid rgba(255,255,255,.15);
+  border-radius: 14px; padding: 28px 32px; display: flex; flex-direction: column;
+  align-items: center; gap: 14px; min-width: 260px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.6);
+}
+#qr-title { font-size: .95rem; font-weight: 600; color: #e2e8f0; text-align: center; max-width: 220px; }
+#qr-code { background: #fff; border-radius: 8px; padding: 10px; }
+#qr-url { font-size: .72rem; color: #64748b; word-break: break-all; text-align: center; max-width: 220px; }
+#qr-close {
+  position: absolute; top: 10px; right: 14px; background: none; border: none;
+  color: #888; cursor: pointer; font-size: 1.1rem; line-height: 1; padding: 2px 6px;
+  border-radius: 4px;
+}
+#qr-close:hover { background: rgba(255,255,255,.08); color: #fff; }
 
 .empty { color: var(--muted); font-size: .9rem; }
 
@@ -1366,6 +1518,54 @@ def generate_landing(seminars: list[dict], config: dict) -> None:
        · MD 파일만 추가하면 자동 배포</p>
   </div>
 </footer>
+
+<!-- QR 모달 -->
+<div id="qr-modal" hidden>
+  <div id="qr-backdrop"></div>
+  <div id="qr-box">
+    <button id="qr-close">✕</button>
+    <div id="qr-title"></div>
+    <div id="qr-code"></div>
+    <div id="qr-url"></div>
+  </div>
+</div>
+<script>
+(function() {{
+  var modal = document.getElementById('qr-modal');
+  var codeEl = document.getElementById('qr-code');
+  var titleEl = document.getElementById('qr-title');
+  var urlEl = document.getElementById('qr-url');
+
+  function openQR(path, title) {{
+    var absUrl = new URL(path, location.href).href;
+    titleEl.textContent = title;
+    urlEl.textContent = absUrl;
+    codeEl.innerHTML = '';
+    modal.hidden = false;
+    if (!window.QRCode) {{
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';
+      s.onload = function() {{ new QRCode(codeEl, {{text: absUrl, width: 200, height: 200}}); }};
+      document.head.appendChild(s);
+    }} else {{
+      new QRCode(codeEl, {{text: absUrl, width: 200, height: 200}});
+    }}
+  }}
+
+  document.querySelectorAll('.qr-btn').forEach(function(btn) {{
+    btn.addEventListener('click', function(e) {{
+      e.preventDefault();
+      openQR(btn.dataset.path, btn.dataset.title);
+    }});
+  }});
+
+  document.getElementById('qr-close').onclick = function() {{ modal.hidden = true; }};
+  document.getElementById('qr-backdrop').onclick = function() {{ modal.hidden = true; }};
+  document.addEventListener('keydown', function(e) {{
+    if (e.key === 'Escape') modal.hidden = true;
+  }});
+}})();
+</script>
 
 </body>
 </html>"""

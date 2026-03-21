@@ -1,8 +1,8 @@
 # Software Design Document
 
 **프로젝트**: auto-seminar
-**버전**: 1.2.0
-**작성일**: 2026-03-14
+**버전**: 1.6.0
+**작성일**: 2026-03-22
 **작성자**: 플랫폼팀
 
 ---
@@ -684,6 +684,23 @@ def _inject_theme_switcher(html_path, active_theme):
 테마 CSS 1개 ≈ 3KB × 6개 커스텀 테마 ≈ +18KB.
 현대 브라우저 환경에서 무시할 수준이며, 정적 서빙이므로 캐시됩니다.
 
+#### v1.6 추가 기능
+
+**딥링크 (`?slide=N`)**
+- `_inject_theme_switcher()`가 `</head>`에 URLSearchParams 스크립트를 주입
+- bespoke.js(`</body>`)보다 먼저 파싱되어 hash 변환이 경쟁 없이 완료됨
+- MutationObserver가 `bespoke-marp-active` 클래스 변화 감지 → `history.replaceState`로 URL 업데이트
+
+**OG 메타태그**
+- `build_slide()` 순서 변경: `build_exports()` 완료 후 `_inject_theme_switcher()` 호출
+- `meta` 딕셔너리로 `stem`, `title`, `desc`, `base_url`, `png_count` 전달
+- `base_url` 설정 시 `og:title`, `og:description`, `og:url`, `og:image` 주입
+
+**썸네일 목차 드로어**
+- `_build_switcher_html(png_count, stem)` 파라미터 추가
+- PNG 있으면 `./png/<stem>.NNN.png` 썸네일, 없으면 번호 그리드 폴백
+- 동일 MutationObserver에서 URL 미러링과 목차 하이라이트를 동시 처리
+
 ### 6.7 원격 GitHub MD 슬라이드 (v1.5 신규)
 
 #### 설계 결정
@@ -754,7 +771,7 @@ finally:
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{title}</title>
-  <style>{_LANDING_CSS}</style>  ← 인라인 CSS (외부 의존성 없음)
+  <style>{_LANDING_CSS}</style>  ← 인라인 CSS
 </head>
 <body>
   <header class="site-header">    ← 타이틀 + 설명
@@ -763,10 +780,12 @@ finally:
       <div class="card-grid">
         <div class="card">       ← 각 슬라이드 카드 (v1.1 변경)
           <a class="card-body">  ← 발표 링크 (전체 상단)
-          <div class="card-foot"> ← 다운로드 버튼들
+          <div class="card-foot"> ← 다운로드 버튼들 + QR 버튼 (v1.6)
     <section class="section">    ← 테마 갤러리
   <footer class="site-footer">
+  <div id="qr-modal">            ← QR 모달 (v1.6, 전역 1개)
 </body>
+<script>                         ← QR 핸들러 (qrcodejs@1.0.0 지연 로드)
 ```
 
 ### 7.2 카드 구조 변경 (v1.0 → v1.1)
@@ -832,11 +851,27 @@ def _seminar_card(s: dict) -> str:
 | 원칙 | 구현 |
 |------|------|
 | 다크 테마 기본 | `--bg: #0f1117` |
-| 외부 의존성 없음 | 시스템 폰트 스택, 순수 CSS |
+| 외부 CDN (조건부) | QR 버튼 클릭 시 qrcodejs@1.0.0 지연 로드 (jsdelivr) |
 | 반응형 그리드 | `repeat(auto-fill, minmax(272px, 1fr))` |
 | 테마별 색상 코드 | PDF=빨강, PPTX=주황, PNG=초록 |
 | 모바일 대응 | `@media (max-width: 640px)` |
 | 카드 hover | `border-color: var(--accent)` + `box-shadow` |
+
+### 7.4b QR 코드 모달 (v1.6)
+
+랜딩 페이지 전역에 `<div id="qr-modal">` 1개를 배치합니다.
+
+```
+카드 QR 버튼 클릭
+  → openQR(path, title)
+    → window.QRCode 존재 여부 확인
+      - 없음: <script src="cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"> 동적 삽입
+               → onload 후 재호출
+      - 있음: new QRCode(div, {text: absUrl}) → canvas 렌더링
+    → 모달 표시
+```
+
+**CDN 의존성**: `qrcodejs@1.0.0` (约14KB minified), jsDelivr CDN, 지연 로드 (최초 클릭 시 1회).
 
 ### 7.5 테마 갤러리 카드 (`_theme_card`)
 
@@ -1015,3 +1050,4 @@ GitHub Actions는 Non-0 종료 코드 시 Step 실패로 처리하여 Pages 배�
 | 1.1.0 | 2026-03-13 | 내보내기 시스템 설계 추가 (섹션 5), 카드 구조 변경 (7.2), Chrome 탐지 설계, 오류 처리 섹션 신규 |
 | 1.2.0 | 2026-03-14 | 디렉터리 구조 갱신 (1.1), 데이터 흐름에 후처리 단계 추가 (1.2), 설계 결정 5건 추가 (1.3), 함수 목록 갱신 (2.1), 테마 스위처 설계 (6.6), create_theme.py 설계 (6.5), lint 동적 감지 (6.5) |
 | 1.5.0 | 2026-03-21 | 원격 GitHub MD 슬라이드 설계 (6.7): url 단일 파일 + dir 디렉토리 패턴, 테마 스위처 특이도 버그 수정 (6.6) |
+| 1.6.0 | 2026-03-22 | 딥링크 `?slide=N` (6.6), OG 메타태그 + QR코드 (7.3, 7.4), 썸네일 목차 드로어 (6.6), CDN 의존성 정책 갱신 (7.4) |
