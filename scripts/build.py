@@ -897,6 +897,10 @@ THEME_META: dict[str, tuple[str, str, list[str]]] = {
     "slate":         ("Slate",         "슬레이트 · 화이트+인디고",  ["#f8fafc", "#1e293b", "#6366f1", "#3730a3", "#e2e8f0"]),
     "lavender":      ("Lavender",      "라벤더 · 라이트 퍼플",      ["#faf5ff", "#3b0764", "#a855f7", "#7e22ce", "#ede9fe"]),
     "paper":         ("Paper",         "페이퍼 · 스톤+앰버",        ["#fafaf9", "#1c1917", "#f59e0b", "#b45309", "#e7e5e4"]),
+    "azure":         ("Azure",         "애저 · 스카이 블루 라이트", ["#f0f9ff", "#082f49", "#38bdf8", "#0284c7", "#bae6fd"]),
+    "rose":          ("Rose",          "로즈 · 비비드 크림슨",      ["#fff1f2", "#4c0519", "#f43f5e", "#be123c", "#fecdd3"]),
+    "peach":         ("Peach",         "피치 · 웜 오렌지 라이트",   ["#fff7ed", "#431407", "#f97316", "#c2410c", "#fed7aa"]),
+    "chalk":         ("Chalk",         "초크 · 울트라 미니멀 화이트",["#fcfcfc", "#18181b", "#52525b", "#27272a", "#e4e4e7"]),
 }
 
 

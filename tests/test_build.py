@@ -186,6 +186,7 @@ class TestThemeMeta:
             "monochrome", "aurora", "solarized", "sunshine", "sakura", "mint",
             "sky", "grape", "coffee",
             "slate", "lavender", "paper",
+            "azure", "rose", "peach", "chalk",
             "default", "gaia", "uncover",
         ]
         for t in expected:
