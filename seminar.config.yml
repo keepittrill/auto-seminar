@@ -11,9 +11,10 @@ theme: catppuccin
 #     stem: html-notes          # 선택 (없으면 파일명 stem 자동 사용)
 #     seminar_theme: ocean      # 선택
 #     seminar_title: "HTML 기초" # 선택
-#
-#   # 디렉토리 전체 (GitHub Contents API 사용)
-#   - dir: https://github.com/keepittrill/sw-learning/tree/main/topics
-#     pattern: "*.md"           # 선택 (기본: "*.md", fnmatch 형식)
-#     stem_prefix: "sw-"        # 선택 (stem 충돌 방지용 접두어)
-#     seminar_theme: catppuccin # 선택 (디렉토리 내 모든 파일에 적용)
+
+remote_slides:
+  # 디렉토리 전체 (GitHub Contents API 사용)
+  - dir: https://github.com/keepittrill/sw-learning/tree/main/topics
+    pattern: "*.md"           # 선택 (기본: "*.md", fnmatch 형식)
+    stem_prefix: "sw-"        # 선택 (stem 충돌 방지용 접두어)
+    seminar_theme: catppuccin # 선택 (디렉토리 내 모든 파일에 적용)
