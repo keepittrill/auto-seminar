@@ -462,6 +462,7 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
     if (!hljsEl) {{ hljsEl = document.createElement('style'); hljsEl.id = 'as-hljs-css'; document.head.appendChild(hljsEl); }}
     hljsEl.textContent = _hljsCss(name);
     renderThemeButtons();
+    if (window._asMermaidRerender) window._asMermaidRerender(name);
   }}
 
   function applyLayout(name) {{
@@ -862,6 +863,85 @@ def _boost_override_css(css: str) -> str:
     return reset + css
 
 
+def _inject_mermaid_support(html: str, active_theme: str) -> str:
+    """Marp HTML에 mermaid.js 렌더링 지원 주입.
+
+    - code.language-mermaid 블록을 div.mermaid로 변환 (빌드 타임 X, 런타임 JS)
+    - mermaid.js를 CDN에서 로드 (jsdelivr)
+    - 테마 스위처 연동: applyTheme 시 mermaid 테마도 재렌더
+    - PDF/PPTX 내보내기는 미지원 (브라우저 인쇄 시 동작)
+    """
+    # 테마별 mermaid 테마 (배경 밝기 기준)
+    theme_mermaid: dict[str, str] = {}
+    for key, meta in THEME_META.items():
+        bg = meta[2][0]  # 첫 번째 색상 = 배경색
+        r, g, b = int(bg[1:3], 16) / 255, int(bg[3:5], 16) / 255, int(bg[5:7], 16) / 255
+        lum = 0.299 * r + 0.587 * g + 0.114 * b
+        theme_mermaid[key] = "dark" if lum < 0.5 else "neutral"
+
+    init_mermaid_theme = json.dumps(theme_mermaid.get(active_theme, "dark"))
+    theme_mermaid_js   = json.dumps(theme_mermaid)
+
+    script = f"""<!-- auto-seminar mermaid support -->
+<script>
+(function() {{
+  var INIT_MERMAID_THEME = {init_mermaid_theme};
+  var THEME_MERMAID = {theme_mermaid_js};
+
+  function getMermaidTheme(t) {{ return THEME_MERMAID[t] || 'dark'; }}
+
+  // code.language-mermaid → div.mermaid (원본 소스 data-src에 보존)
+  function convertBlocks() {{
+    document.querySelectorAll('code.language-mermaid').forEach(function(code) {{
+      var pre = code.closest('pre,marp-pre') || code.parentElement;
+      var parent = pre && pre.parentElement;
+      if (!parent) return;
+      var src = code.textContent || '';
+      var div = document.createElement('div');
+      div.className = 'mermaid';
+      div.dataset.src = src;
+      div.style.cssText = 'max-width:100%;text-align:center;margin:0.5em auto;';
+      parent.replaceChild(div, pre);
+    }});
+  }}
+
+  function renderAll(mermaidTheme) {{
+    // 이미 렌더된 SVG를 원본 소스로 복원 후 재렌더
+    document.querySelectorAll('div.mermaid[data-src]').forEach(function(div) {{
+      div.removeAttribute('data-processed');
+      div.innerHTML = div.dataset.src;
+    }});
+    mermaid.initialize({{
+      startOnLoad: false,
+      theme: mermaidTheme || INIT_MERMAID_THEME,
+      securityLevel: 'loose',
+      fontFamily: "'Noto Sans KR', sans-serif",
+    }});
+    mermaid.run({{ nodes: document.querySelectorAll('div.mermaid[data-src]') }});
+  }}
+
+  var _ready = false;
+  var _pendingTheme = INIT_MERMAID_THEME;
+
+  // 테마 스위처에서 applyTheme() 호출 시 mermaid 재렌더
+  window._asMermaidRerender = function(slidetheme) {{
+    _pendingTheme = getMermaidTheme(slidetheme);
+    if (_ready) renderAll(_pendingTheme);
+  }};
+
+  var s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js';
+  s.onload = function() {{
+    _ready = true;
+    convertBlocks();
+    renderAll(_pendingTheme);
+  }};
+  document.head.appendChild(s);
+}})();
+</script>"""
+    return html.replace("</body>", script + "\n</body>", 1)
+
+
 def _inject_theme_switcher(html_path: pathlib.Path, active_theme: str, active_layout: str = "default", original_md: str = "") -> None:
     """Marp 생성 HTML에 테마+레이아웃 스위처 UI를 후처리로 주입.
 
@@ -898,6 +978,10 @@ def _inject_theme_switcher(html_path: pathlib.Path, active_theme: str, active_la
 
     # 3. 스위처 UI 주입 (</body> 직전) — origMd를 함수 인자로 전달해 IIFE 내부에 직접 embed
     html = html.replace("</body>", _build_switcher_html(active_theme, active_layout, original_md) + "\n</body>", 1)
+
+    # 4. Mermaid 지원 주입 (mermaid 블록이 있을 때만)
+    if "language-mermaid" in html:
+        html = _inject_mermaid_support(html, active_theme)
 
     html_path.write_text(html, encoding="utf-8")
 
