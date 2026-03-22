@@ -20,7 +20,7 @@
 8. [실전 예시](#8-실전-예시)
 9. [트러블슈팅](#9-트러블슈팅)
 10. [FAQ](#10-faq)
-11. [기술 레퍼런스 (개발자용)](#11-기술-레퍼런스-개발자용)
+11. [기술 레퍼런스 (개발자용)](#11-기술-레퍼런스-개발자용) · [11.11 외부 연결 전체 목록](#1111-외부-연결-전체-목록)
 
 ---
 
@@ -2545,7 +2545,122 @@ _LANDING_CSS = (ROOT / "assets" / "landing.css").read_text(encoding="utf-8")
 
 ---
 
-### 11.10 로컬 디버깅 팁
+### 11.10 외부 연결 전체 목록
+
+auto-seminar가 외부 서버에 연결하는 모든 경우를 정리합니다.
+
+#### 요약 표
+
+| # | 연결 대상 | 시점 | 조건 | 차단 시 영향 |
+|---|-----------|------|------|-------------|
+| 1 | `cdn.jsdelivr.net/npm/mermaid@11` | 슬라이드 HTML 로드 시 | MD에 ` ```mermaid ` 블록이 있는 슬라이드만 | Mermaid 다이어그램 미렌더링 (코드 블록으로 표시) |
+| 2 | `cdn.jsdelivr.net/npm/qrcodejs@1.0.0` | 랜딩 페이지 QR 버튼 최초 클릭 시 | QR 버튼 클릭 시 1회만 | QR 코드 미표시 |
+| 3 | `api.github.com/repos/…/contents/…` | 빌드 시 (`python scripts/build.py`) | `seminar.config.yml`에 `remote_slides.dir` 항목이 있을 때만 | 해당 원격 슬라이드 fetch 실패, 빌드 계속 진행 |
+| 4 | `raw.githubusercontent.com/…` | 빌드 시 (`python scripts/build.py`) | `seminar.config.yml`에 `remote_slides.url` 또는 `dir` 항목이 있을 때만 | 해당 원격 슬라이드 fetch 실패, 빌드 계속 진행 |
+
+---
+
+#### 1. Mermaid.js (`cdn.jsdelivr.net/npm/mermaid@11`)
+
+**발생 위치**: 각 슬라이드 HTML 파일 (`dist/<stem>/index.html`)
+
+**발생 조건**: 빌드된 슬라이드 소스 MD에 ` ```mermaid ` 코드 블록이 하나라도 있는 경우에만 해당 HTML에 로드 스크립트가 주입됩니다. Mermaid 블록이 없는 슬라이드는 외부 연결이 전혀 없습니다.
+
+**동작 방식**:
+```html
+<!-- 빌드 시 _inject_mermaid_support()가 </body> 직전에 주입 -->
+<script>
+  var s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js';
+  document.head.appendChild(s);
+</script>
+```
+스크립트 로드 후 `code.language-mermaid` 블록을 `div.mermaid`로 변환하여 렌더링합니다.
+
+**차단 시**: Mermaid 다이어그램이 원본 코드 블록(`flowchart TD ...`)으로 그대로 표시됩니다. 슬라이드 레이아웃 자체는 정상 동작합니다.
+
+**오프라인 대안**: Mermaid 다이어그램을 미리 PNG로 렌더링하여 이미지로 삽입하세요.
+
+---
+
+#### 2. QRCodeJS (`cdn.jsdelivr.net/npm/qrcodejs@1.0.0`)
+
+**발생 위치**: 랜딩 페이지 (`dist/index.html`)
+
+**발생 조건**: 사용자가 랜딩 페이지에서 세미나 카드의 **QR** 버튼을 클릭할 때 단 1회 지연 로드됩니다. 페이지 로드 시에는 연결하지 않습니다.
+
+**동작 방식**:
+```javascript
+// QR 버튼 클릭 시
+if (!window.QRCode) {
+  var s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';
+  s.onload = function() { new QRCode(div, { text: url }); };
+  document.head.appendChild(s);
+}
+```
+약 14KB 크기이며, 한 번 로드 후 `window.QRCode`에 캐시되어 이후 클릭은 추가 요청 없이 동작합니다.
+
+**차단 시**: QR 버튼 클릭 시 QR 코드가 표시되지 않습니다. 랜딩 페이지 및 슬라이드 HTML의 다른 기능은 모두 정상 동작합니다.
+
+**오프라인 대안**: QR 기능은 슬라이드 발표와 무관한 편의 기능입니다. 링크 공유는 🔗 현재 슬라이드 링크 복사 버튼으로 대체 가능합니다.
+
+---
+
+#### 3. GitHub Contents API (`api.github.com`)
+
+**발생 위치**: 빌드 스크립트 (`python scripts/build.py` 또는 GitHub Actions)
+
+**발생 조건**: `seminar.config.yml`에 `remote_slides` 항목이 있고, `dir:` 키로 GitHub 디렉토리를 지정한 경우에만 발생합니다.
+
+```yaml
+# 이 설정이 있을 때만 api.github.com 연결
+remote_slides:
+  - dir: https://github.com/owner/repo/tree/main/slides
+    pattern: "*.md"
+```
+
+**동작 방식**: `_gh_tree_to_api()`가 GitHub 트리 URL을 Contents API URL로 변환한 뒤 `urllib.request`로 JSON을 fetch합니다. 응답에서 `.md` 파일 목록을 추출하여 각 파일을 `raw.githubusercontent.com`에서 내려받습니다.
+
+**인증**: private repo는 `REMOTE_SLIDES_TOKEN` 환경변수(GitHub Fine-grained PAT)로 `Authorization: Bearer <token>` 헤더를 전송합니다.
+
+**차단 시**: 해당 원격 슬라이드 항목의 fetch가 실패합니다. 빌드는 중단되지 않고 계속 진행되며, 해당 슬라이드만 생략됩니다.
+
+---
+
+#### 4. GitHub Raw Content (`raw.githubusercontent.com`)
+
+**발생 위치**: 빌드 스크립트 (`python scripts/build.py` 또는 GitHub Actions)
+
+**발생 조건**: `seminar.config.yml`에 `remote_slides` 항목이 있고, `url:` 또는 `dir:` 키로 GitHub 파일을 지정한 경우에만 발생합니다.
+
+```yaml
+# 이 설정이 있을 때만 raw.githubusercontent.com 연결
+remote_slides:
+  - url: https://github.com/owner/repo/blob/main/slides/intro.md
+```
+
+**동작 방식**: `_gh_blob_to_raw()`가 blob URL을 raw URL로 변환한 뒤 MD 파일 내용을 fetch합니다. 이미지 상대경로는 `_rewrite_image_paths()`로 절대 raw URL로 변환됩니다.
+
+**인증**: Contents API와 동일하게 `REMOTE_SLIDES_TOKEN`을 사용합니다.
+
+**차단 시**: 해당 원격 슬라이드 fetch가 실패합니다. 빌드는 계속 진행됩니다.
+
+---
+
+#### 외부 연결이 전혀 없는 경우
+
+아래 조건을 모두 충족하면 빌드 결과물이 외부 서버에 전혀 연결하지 않습니다:
+
+- `seminar.config.yml`에 `remote_slides` 항목 없음 (또는 주석 처리)
+- 모든 슬라이드 MD 파일에 ` ```mermaid ` 블록 없음
+- 랜딩 페이지에서 QR 버튼 미클릭
+
+이 경우 랜딩 페이지, 슬라이드 HTML, 테마 스위처, 딥링크, 썸네일 목차 등 모든 기능이 **완전 오프라인**으로 동작합니다.
+
+---
+
+### 11.11 로컬 디버깅 팁
 
 #### Marp CLI 단독 테스트
 
