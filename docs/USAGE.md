@@ -1245,6 +1245,7 @@ remote_slides:
     stem: my-slide            # 선택 (없으면 파일명 stem 자동 사용)
     seminar_theme: ocean      # 선택
     seminar_title: "제목"      # 선택
+    # enabled: false          # 이 줄만 추가하면 fetch 안 함 (기본: true)
 ```
 
 **디렉토리 패턴 (여러 파일 한번에)**
@@ -1260,7 +1261,10 @@ remote_slides:
     pattern: "phase-03-*.md"   # 선택 (기본: "*.md")
     stem_prefix: "sw-"         # 선택: stem 앞에 접두어 추가 (충돌 방지)
     seminar_theme: ocean
+    enabled: false             # false로 설정하면 이 항목만 fetch 안 함
 ```
+
+> `enabled: false`로 설정하면 해당 항목의 fetch가 완전히 건너뜁니다. PAT 토큰과 config 설정은 그대로 유지되므로 `enabled: true`(또는 줄 삭제)로 언제든 다시 활성화할 수 있습니다.
 
 `pattern` 예시 (fnmatch 형식):
 

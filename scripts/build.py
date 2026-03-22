@@ -1933,6 +1933,9 @@ def fetch_all_remote_slides(config: dict) -> list:
     paths: list[pathlib.Path] = []
 
     for entry in entries:
+        if entry.get("enabled", True) is False:
+            print(f"  –  remote_slides '{entry.get('dir') or entry.get('url', '?')}' — disabled (enabled: false)")
+            continue
         if "dir" in entry:
             # ── dir: 항목 → 파일 목록으로 확장 ──────────────────────────────
             pattern     = entry.get("pattern", "*.md")

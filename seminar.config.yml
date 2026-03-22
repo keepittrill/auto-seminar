@@ -19,3 +19,4 @@ remote_slides:
     pattern: "*.md"           # 선택 (기본: "*.md", fnmatch 형식)
     stem_prefix: "sw-"        # 선택 (stem 충돌 방지용 접두어)
     seminar_theme: catppuccin # 선택 (디렉토리 내 모든 파일에 적용)
+    # enabled: false          # 이 줄만 추가하면 fetch 안 함 (기본: true)
