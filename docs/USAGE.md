@@ -1183,37 +1183,86 @@ theme: catppuccin
 
 다른 repo에 있는 MD 파일을 로컬에 복사하지 않고 URL만으로 빌드에 포함할 수 있습니다.
 
-#### 파일 1개 지정
+#### Step 0 — 시작 전 확인
+
+```
+원격 repo가 public?  → Step 2로 바로 이동
+원격 repo가 private? → Step 1(PAT 설정)을 먼저 완료한 후 Step 2로 이동
+```
+
+> ⚠️ config를 먼저 push하면 빌드가 실행되고 private repo는 인증 실패로 skip됩니다.
+> **private repo는 반드시 token을 먼저 등록하세요.**
+
+---
+
+#### Step 1 — Private repo PAT 설정 (private repo만)
+
+**1-1. Fine-grained PAT 발급**
+
+1. GitHub → **Settings** (우상단 프로필) → **Developer settings** → **Personal access tokens** → **Fine-grained tokens** → **Generate new token**
+2. 아래와 같이 설정:
+
+| 항목 | 값 |
+|------|----|
+| Token name | `auto-seminar-remote` (자유 설정) |
+| Expiration | 원하는 만료일 (무기한 설정 가능) |
+| Resource owner | 원격 repo의 소유자 (본인 계정 또는 org) |
+| Repository access | **Only select repositories** → 원격 repo 선택 |
+| Permissions → Contents | **Read-only** |
+
+3. **Generate token** 클릭 → 생성된 토큰 값 즉시 복사 (페이지를 벗어나면 다시 볼 수 없음)
+
+**1-2. auto-seminar repo에 Secret 등록**
+
+1. `auto-seminar` repo → **Settings** → **Secrets and variables** → **Actions**
+2. **New repository secret** 클릭
+3. 아래와 같이 입력 후 **Add secret**:
+
+| 항목 | 값 |
+|------|----|
+| Name | `REMOTE_SLIDES_TOKEN` |
+| Secret | 1-1에서 복사한 토큰 |
+
+> 토큰이 등록되면 GitHub Actions `deploy.yml`이 자동으로 `REMOTE_SLIDES_TOKEN` 환경변수로 주입합니다.
+> 토큰이 없으면 public repo는 정상 동작, private repo는 경고 후 skip됩니다.
+
+**로컬 빌드에서 private repo 사용 시**
+
+```bash
+REMOTE_SLIDES_TOKEN=<토큰값> python scripts/build.py
+```
+
+---
+
+#### Step 2 — seminar.config.yml 설정
+
+**파일 1개 지정**
 
 ```yaml
 # seminar.config.yml
 remote_slides:
-  - url: https://github.com/keepittrill/sw-learning/blob/main/topics/notes.md
-    stem: html-notes          # 선택 (없으면 파일명 stem 자동 사용)
+  - url: https://github.com/<owner>/<repo>/blob/<branch>/<path>/file.md
+    stem: my-slide            # 선택 (없으면 파일명 stem 자동 사용)
     seminar_theme: ocean      # 선택
-    seminar_title: "HTML 기초" # 선택
+    seminar_title: "제목"      # 선택
 ```
 
-#### 디렉토리 패턴 (여러 파일 한번에)
+**디렉토리 패턴 (여러 파일 한번에)**
 
 ```yaml
 remote_slides:
   # 디렉토리 내 모든 .md 파일
-  - dir: https://github.com/keepittrill/sw-learning/tree/main/topics
+  - dir: https://github.com/<owner>/<repo>/tree/<branch>/<path>
     seminar_theme: catppuccin
 
   # 패턴으로 필터링 (fnmatch 형식)
-  - dir: https://github.com/keepittrill/sw-learning/tree/main/topics
+  - dir: https://github.com/<owner>/<repo>/tree/<branch>/<path>
     pattern: "phase-03-*.md"   # 선택 (기본: "*.md")
     stem_prefix: "sw-"         # 선택: stem 앞에 접두어 추가 (충돌 방지)
     seminar_theme: ocean
-
-  # 혼합 사용 가능
-  - url: https://github.com/keepittrill/sw-learning/blob/main/intro.md
-    seminar_title: "소개"
 ```
 
-`pattern`은 [fnmatch](https://docs.python.org/3/library/fnmatch.html) 형식입니다:
+`pattern` 예시 (fnmatch 형식):
 
 | 패턴 | 설명 |
 |------|------|
@@ -1221,43 +1270,29 @@ remote_slides:
 | `phase-03-*.md` | "phase-03-"으로 시작하는 .md |
 | `[0-9][0-9]-*.md` | 숫자 2자리로 시작하는 .md |
 
-**동작 방식:**
-- 빌드 시 `slides/_remote_<stem>.md`로 임시 저장 → 기존 파이프라인 그대로 처리
-- 빌드 완료 후 임시 파일 자동 삭제 (git에 남지 않음)
+---
+
+#### Step 3 — push 및 확인
+
+```bash
+git add seminar.config.yml
+git commit -m "feat: remote slides 추가"
+git push
+```
+
+GitHub Actions가 자동 실행되어 원격 MD를 fetch한 뒤 빌드합니다.
+Actions 탭에서 로그를 확인하면 fetch 성공/실패 여부를 알 수 있습니다.
+
+---
+
+#### 동작 방식 및 제한
+
+- 빌드 시 `slides/_remote_<stem>.md`로 임시 저장 → 기존 파이프라인으로 처리 → 빌드 후 자동 삭제 (git에 남지 않음)
 - 상대경로 이미지(`./img/foo.png`)는 raw GitHub URL로 자동 변환
 - URL/dir 접근 불가 시 경고 출력 후 skip (전체 빌드는 계속됨)
 - `dir:` 항목은 파일명 알파벳 순으로 처리
-
-**제한:**
-- 원격 파일 변경 시 자동 트리거 없음 (push할 때마다 다시 fetch)
-- `dir:` 는 1단계 깊이만 (하위 디렉토리 재귀 탐색 미지원)
-
-#### Private repo 접근 (PAT 설정)
-
-원격 repo가 private인 경우 Personal Access Token(PAT)을 등록해야 합니다.
-
-**1단계 — Fine-grained PAT 발급**
-
-1. GitHub → **Settings** → **Developer settings** → **Personal access tokens** → **Fine-grained tokens** → **Generate new token**
-2. 아래와 같이 설정:
-
-| 항목 | 값 |
-|------|----|
-| Resource owner | 원격 repo의 소유자 (본인 또는 org) |
-| Repository access | Only select repositories → 원격 repo 선택 |
-| Permissions → Contents | **Read-only** |
-
-3. 토큰 생성 후 값 복사 (한 번만 표시됨)
-
-**2단계 — auto-seminar repo에 Secret 등록**
-
-1. `auto-seminar` repo → **Settings** → **Secrets and variables** → **Actions**
-2. **New repository secret** 클릭
-3. Name: `REMOTE_SLIDES_TOKEN` / Value: 복사한 토큰 붙여넣기
-
-등록 완료 후 push하거나 **Actions → Run workflow**로 수동 트리거하면 됩니다.
-
-> `REMOTE_SLIDES_TOKEN`이 없으면 public repo는 그대로 동작하고, private repo는 경고 후 skip됩니다.
+- `dir:` 는 1단계 깊이만 지원 (하위 디렉토리 재귀 탐색 미지원)
+- 원격 파일 변경 시 자동 트리거 없음 — auto-seminar repo에 push해야 re-fetch됨
 
 ### 7.5 딥링크 / QR코드 / 썸네일 목차 (v1.6)
 
