@@ -553,7 +553,7 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
   function applyMermaidSize(v) {{
     let el = document.getElementById('as-mermaid-css');
     if (!el) {{ el = document.createElement('style'); el.id = 'as-mermaid-css'; document.head.appendChild(el); }}
-    el.textContent = '.mermaid svg{{max-height:' + v + 'px!important;width:auto!important}}';
+    el.textContent = '.mermaid svg{{max-height:' + v + 'px!important}}';
     mmVal.textContent = v + 'px';
   }}
   mmSlider.oninput = function() {{
@@ -1004,7 +1004,7 @@ def _inject_mermaid_support(html: str, active_theme: str) -> str:
       var div = document.createElement('div');
       div.className = 'mermaid';
       div.dataset.src = src;
-      div.style.cssText = 'max-width:100%;text-align:center;margin:0.5em auto;';
+      div.style.cssText = 'overflow-x:auto;text-align:center;margin:0.5em auto;';
       parent.replaceChild(div, pre);
     }});
   }}
@@ -1020,6 +1020,11 @@ def _inject_mermaid_support(html: str, active_theme: str) -> str:
       theme: mermaidTheme || INIT_MERMAID_THEME,
       securityLevel: 'loose',
       fontFamily: "'Noto Sans KR', sans-serif",
+      flowchart:  {{ useMaxWidth: false, htmlLabels: true }},
+      sequence:   {{ useMaxWidth: false }},
+      gantt:      {{ useMaxWidth: false }},
+      journey:    {{ useMaxWidth: false }},
+      gitGraph:   {{ useMaxWidth: false }},
     }});
     mermaid.run({{ nodes: document.querySelectorAll('div.mermaid[data-src]') }});
   }}
