@@ -10,6 +10,10 @@ headingDivider: 2
 
 ## flowchart — 흐름도
 
+<style scoped>
+.mermaid { transform: scale(0.75); transform-origin: top center; }
+</style>
+
 ```mermaid
 flowchart TD
     A([🚀 시작]) --> B{조건 확인}
@@ -111,11 +115,15 @@ flowchart LR
 ## 내 슬라이드
 
 <style scoped>
+/* 방법 1: 비율로 축소 (텍스트도 함께 작아짐) */
+.mermaid { transform: scale(0.75); transform-origin: top center; }
+
+/* 방법 2: 높이 제한 (가로로 긴 다이어그램) */
 .mermaid svg { max-height: 420px !important; }
 </style>
 
 ```mermaid
-sequenceDiagram
+flowchart TD
   ...
 ```
 ````
