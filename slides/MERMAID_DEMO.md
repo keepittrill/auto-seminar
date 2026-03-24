@@ -24,6 +24,10 @@ flowchart TD
 
 ## sequenceDiagram — 시퀀스
 
+<style scoped>
+.mermaid svg { max-height: 420px !important; }
+</style>
+
 ```mermaid
 sequenceDiagram
     actor 사용자
@@ -92,12 +96,27 @@ pie title 기술 스택 비중
 
 ## 사용 방법 & 제한
 
-**사용법**
+**기본 사용법**
 
 ````markdown
 ```mermaid
 flowchart LR
     A --> B --> C
+```
+````
+
+**다이어그램이 너무 크면** — `<style scoped>` 로 해당 슬라이드만 조절
+
+````markdown
+## 내 슬라이드
+
+<style scoped>
+.mermaid svg { max-height: 420px !important; }
+</style>
+
+```mermaid
+sequenceDiagram
+  ...
 ```
 ````
 
