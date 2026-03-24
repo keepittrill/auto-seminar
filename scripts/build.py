@@ -236,6 +236,13 @@ def _build_switcher_html(active_theme: str, active_layout: str = "default", orig
       <span class="ts-fs-lbl">40</span>
       <span id="ts-fontsize-val">32px</span>
     </div>
+    <div class="ts-sh">🧜 다이어그램 크기</div>
+    <div id="ts-fs-row">
+      <span class="ts-fs-lbl">S</span>
+      <input type="range" id="ts-mermaid-size" min="150" max="550" step="10" value="420">
+      <span class="ts-fs-lbl">L</span>
+      <span id="ts-mermaid-val">420px</span>
+    </div>
     <div class="ts-sh">⚙ 표시</div>
     <div id="ts-misc-row">
       <button class="ts-mb" id="ts-heading-btn">제목 숨기기</button>
@@ -541,6 +548,19 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
     localStorage.setItem('as-fontsize', this.value);
   }};
 
+  const mmSlider = document.getElementById('ts-mermaid-size');
+  const mmVal    = document.getElementById('ts-mermaid-val');
+  function applyMermaidSize(v) {{
+    let el = document.getElementById('as-mermaid-css');
+    if (!el) {{ el = document.createElement('style'); el.id = 'as-mermaid-css'; document.head.appendChild(el); }}
+    el.textContent = '.mermaid svg{{max-height:' + v + 'px!important;width:auto!important}}';
+    mmVal.textContent = v + 'px';
+  }}
+  mmSlider.oninput = function() {{
+    applyMermaidSize(this.value);
+    localStorage.setItem('as-mermaid-size', this.value);
+  }};
+
   let headingHidden = false;
   const headingBtn = document.getElementById('ts-heading-btn');
   headingBtn.onclick = function() {{
@@ -730,6 +750,8 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
     document.head.appendChild(fsEl);
     fsEl.textContent = 'section{{font-size:' + savedFs + 'px!important}}';
   }}
+  const savedMm = localStorage.getItem('as-mermaid-size');
+  if (savedMm) {{ mmSlider.value = savedMm; applyMermaidSize(savedMm); }}
   const savedH = localStorage.getItem('as-headings');
   if (savedH === '0') headingBtn.click();
   const savedA = localStorage.getItem('as-align');
