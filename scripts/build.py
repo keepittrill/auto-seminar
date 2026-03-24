@@ -239,9 +239,9 @@ def _build_switcher_html(active_theme: str, active_layout: str = "default", orig
     <div class="ts-sh">🧜 다이어그램 크기</div>
     <div id="ts-fs-row">
       <span class="ts-fs-lbl">S</span>
-      <input type="range" id="ts-mermaid-size" min="150" max="550" step="10" value="420">
+      <input type="range" id="ts-mermaid-size" min="40" max="120" step="5" value="100">
       <span class="ts-fs-lbl">L</span>
-      <span id="ts-mermaid-val">420px</span>
+      <span id="ts-mermaid-val">100%</span>
     </div>
     <div class="ts-sh">⚙ 표시</div>
     <div id="ts-misc-row">
@@ -553,8 +553,9 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
   function applyMermaidSize(v) {{
     let el = document.getElementById('as-mermaid-css');
     if (!el) {{ el = document.createElement('style'); el.id = 'as-mermaid-css'; document.head.appendChild(el); }}
-    el.textContent = '.mermaid svg{{max-height:' + v + 'px!important}}';
-    mmVal.textContent = v + 'px';
+    var scale = v / 100;
+    el.textContent = '.mermaid{{transform:scale(' + scale + ')!important;transform-origin:top center!important}}';
+    mmVal.textContent = v + '%';
   }}
   mmSlider.oninput = function() {{
     applyMermaidSize(this.value);
