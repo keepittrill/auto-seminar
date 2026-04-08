@@ -3,7 +3,7 @@ headingDivider: [2, 3, 4]
 seminar_layout: dense
 ---
 
-# Claude Code 확장 전략 - 기술 세미나
+# Claude Code 확장 전략 - 기술 세미나 테스트
 
 > Skills / Sub-agents / Hooks / Plugins / Workflows 완전 가이드
 > 대상: Claude Code를 개발 워크플로우에 통합하려는 개발자
