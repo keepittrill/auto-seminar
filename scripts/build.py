@@ -207,6 +207,11 @@ def _build_switcher_html(active_theme: str, active_layout: str = "default", orig
     )
     orig_md_js = json.dumps(original_md, ensure_ascii=False).replace('</script>', '<\\/script>').replace('</Script>', '<\\/Script>')
     stem_js = json.dumps(stem)
+    # 라이브 미리보기용: 활성 테마의 원본 Marp CSS (브라우저 Marp Core themeSet 등록용).
+    # 커스텀 테마만 파일 존재 — Marp 내장(default/gaia/uncover)은 빈 문자열(Core가 자체 보유).
+    _pv_css_path = THEMES_DIR / f"{active_theme}.css"
+    _pv_css = _pv_css_path.read_text(encoding="utf-8") if _pv_css_path.exists() else ""
+    preview_theme_css_js = json.dumps(_pv_css, ensure_ascii=False).replace('</script>', '<\\/script>').replace('</Script>', '<\\/Script>')
     return f"""<!-- auto-seminar theme switcher -->
 <div id="ts-root">
   <button id="ts-btn" title="테마·레이아웃 변경" aria-label="테마·레이아웃 변경">
@@ -267,9 +272,15 @@ def _build_switcher_html(active_theme: str, active_layout: str = "default", orig
   <div id="ts-dh">
     <span>✏️ MD 소스 편집</span>
     <span id="ts-draft-badge" hidden>• 임시저장됨</span>
+    <button id="ts-pv-toggle" title="라이브 미리보기 켜기/끄기">👁 미리보기</button>
     <button id="ts-dc" title="닫기 (변경사항은 임시저장됨)">✕</button>
   </div>
   <textarea id="ts-ta" spellcheck="false" placeholder="마크다운 소스가 여기에 표시됩니다..."></textarea>
+  <div id="ts-pv-wrap" hidden>
+    <div id="ts-pv-bar"><span id="ts-pv-label">미리보기</span></div>
+    <iframe id="ts-pv" title="라이브 미리보기"></iframe>
+  </div>
+  <div id="ts-save-hint">💡 <b>영구 저장:</b> 💾 다운로드 → <code>slides/</code>에 덮어쓰기 → git push → 자동 재배포. 미리보기는 내 브라우저에만 보입니다.</div>
   <div id="ts-df">
     <button id="ts-reset">↺ 변경 취소</button>
     <button id="ts-dl">💾 .md 다운로드</button>
@@ -369,6 +380,18 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
   border:none;padding:16px;font-family:'JetBrains Mono',Consolas,monospace;
   font-size:.8rem;line-height:1.6;outline:none;overflow-y:auto;tab-size:2}}
 #ts-ta::placeholder{{color:#444}}
+#ts-pv-toggle{{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+  color:#aaa;cursor:pointer;font-size:.7rem;padding:3px 8px;border-radius:6px;line-height:1}}
+#ts-pv-toggle.on{{background:rgba(120,100,220,.3);color:#c4b5fd;border-color:rgba(120,100,220,.45)}}
+#ts-pv-wrap{{display:flex;flex-direction:column;flex:1;min-height:0;
+  border-top:1px solid rgba(255,255,255,.12)}}
+#ts-pv-wrap[hidden]{{display:none!important}}
+#ts-pv-bar{{flex-shrink:0;padding:5px 14px;font-size:.66rem;color:rgba(255,255,255,.55);
+  background:rgba(10,12,22,.98);border-bottom:1px solid rgba(255,255,255,.08)}}
+#ts-pv{{flex:1;width:100%;border:none;background:#fff;min-height:0}}
+#ts-save-hint{{flex-shrink:0;padding:8px 16px;font-size:.66rem;color:rgba(255,255,255,.5);
+  background:rgba(255,255,255,.02);border-top:1px solid rgba(255,255,255,.06);line-height:1.55}}
+#ts-save-hint code{{background:rgba(255,255,255,.09);padding:0 4px;border-radius:3px}}
 #ts-df{{display:flex;gap:8px;padding:12px 16px;
   border-top:1px solid rgba(255,255,255,.1);flex-shrink:0}}
 #ts-reset{{flex:1;padding:8px;border-radius:7px;border:1px solid rgba(255,255,255,.1);
@@ -782,6 +805,7 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
       ta.value = (draft != null && draft !== '') ? draft : origMd;
       draftBadge.hidden = !(draft != null && draft !== '');
       ta.focus();
+      setPreview(_pvOn);
     }});
   }}
   function closeDrawer() {{
@@ -796,6 +820,7 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
   ta.oninput = function() {{
     localStorage.setItem(DRAFT_KEY, this.value);
     draftBadge.hidden = false;
+    schedulePreview();
   }};
   document.getElementById('ts-reset').onclick = function() {{
     if (confirm('변경사항을 모두 취소하고 원본으로 되돌리겠습니까?')) {{
@@ -812,6 +837,78 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
     a.click();
     URL.revokeObjectURL(a.href);
   }};
+
+  // ── 라이브 미리보기 (Marp Core, esm.sh 지연 로드) ─────────────────────────
+  const PREVIEW_THEME_CSS = {preview_theme_css_js};
+  const pvWrap   = document.getElementById('ts-pv-wrap');
+  const pvFrame  = document.getElementById('ts-pv');
+  const pvToggle = document.getElementById('ts-pv-toggle');
+  const pvLabel  = document.getElementById('ts-pv-label');
+  let _marp = null, _marpLoading = false, _pvTimer = null;
+  let _pvOn = (localStorage.getItem('as-preview') === '1');
+
+  // frontmatter 정규화: seminar_theme/theme 키를 제거하고 빌드 확정 테마(INIT_THEME)를
+  // theme: 키로 강제 주입. (embed된 원본 CSS는 active 테마 1개뿐이라 그걸로 고정.)
+  function mdForPreview(md) {{
+    var fm = 'theme: ' + INIT_THEME;
+    if (/^---\\r?\\n/.test(md)) {{
+      return md.replace(/^---\\r?\\n([\\s\\S]*?)\\r?\\n---/, function(m, body) {{
+        var cleaned = body.replace(/^[ \\t]*(seminar_)?theme:.*$/gm, '')
+          .replace(/\\n{{3,}}/g, '\\n\\n').replace(/^\\n+|\\n+$/g, '');
+        return '---\\n' + (cleaned ? cleaned + '\\n' : '') + fm + '\\n---';
+      }});
+    }}
+    return '---\\n' + fm + '\\n---\\n\\n' + md;
+  }}
+
+  async function ensureMarp() {{
+    if (_marp) return _marp;
+    if (_marpLoading) return null;
+    _marpLoading = true;
+    pvFrame.srcdoc = '<body style="font-family:system-ui;padding:24px;color:#888">미리보기 준비 중…</body>';
+    try {{
+      var mod = await import('https://esm.sh/@marp-team/marp-core@4');
+      var M = mod.Marp || (mod.default && mod.default.Marp) || mod.default;
+      _marp = new M({{ html: true }});
+      if (PREVIEW_THEME_CSS) {{ try {{ _marp.themeSet.add(PREVIEW_THEME_CSS); }} catch(e) {{}} }}
+    }} catch(e) {{
+      pvFrame.srcdoc = '<body style="font-family:system-ui;padding:24px;color:#900">'
+        + '미리보기 엔진을 불러오지 못했습니다. 네트워크 연결을 확인하세요.</body>';
+    }}
+    _marpLoading = false;
+    return _marp;
+  }}
+
+  async function renderPreview() {{
+    if (!_pvOn) return;
+    var marp = await ensureMarp();
+    if (!marp) return;
+    try {{
+      var out = marp.render(mdForPreview(ta.value));
+      var base = '<base href="' + location.href + '">';
+      pvFrame.srcdoc = '<!DOCTYPE html><html><head>' + base + '<style>' + out.css
+        + '\\nhtml,body{{margin:0;background:#fff}}svg{{display:block}}</style></head><body>'
+        + out.html + '</body></html>';
+    }} catch(e) {{
+      pvFrame.srcdoc = '<body style="font-family:system-ui;padding:24px;color:#900">렌더 오류: '
+        + ((e && e.message) || e) + '</body>';
+    }}
+  }}
+  function schedulePreview() {{
+    if (!_pvOn) return;
+    clearTimeout(_pvTimer);
+    _pvTimer = setTimeout(renderPreview, 350);
+  }}
+  function setPreview(on) {{
+    _pvOn = on;
+    localStorage.setItem('as-preview', on ? '1' : '0');
+    pvWrap.hidden = !on;
+    pvToggle.classList.toggle('on', on);
+    pvLabel.textContent = '미리보기 · 테마: ' + INIT_THEME
+      + ' (배경/분할 이미지·mermaid는 배포본과 차이날 수 있음)';
+    if (on) renderPreview();
+  }}
+  pvToggle.onclick = function() {{ setPreview(!_pvOn); }};
 
   // ── 이미지 문법 도우미 ──────────────────────────────────────────────────
   // 현재 보고 있는 슬라이드 인덱스 감지 (Marp bespoke-marp-active 클래스)
@@ -886,6 +983,7 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
     localStorage.setItem(DRAFT_KEY, ta.value);
     draftBadge.hidden = false;
     ta.focus();
+    schedulePreview();
   }}
 
   // 버튼 클릭 → 드로어 자동 열기 + 현재 슬라이드 끝에 삽입
@@ -914,6 +1012,7 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
       localStorage.setItem(DRAFT_KEY, ta.value);
       draftBadge.hidden = false;
       ta.focus();
+      schedulePreview();
     }}
   }}
   document.getElementById('ts-img-inline').onclick = function() {{
