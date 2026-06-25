@@ -865,15 +865,15 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
     if (_marp) return _marp;
     if (_marpLoading) return null;
     _marpLoading = true;
-    pvFrame.srcdoc = '<body style="font-family:system-ui;padding:24px;color:#888">미리보기 준비 중…</body>';
+    pvFrame.srcdoc = '<div style="font-family:system-ui;padding:24px;color:#888">미리보기 준비 중…</div>';
     try {{
       var mod = await import('https://esm.sh/@marp-team/marp-core@4?bundle');
       var M = mod.Marp || (mod.default && mod.default.Marp) || mod.default;
       _marp = new M({{ html: true }});
       if (PREVIEW_THEME_CSS) {{ try {{ _marp.themeSet.add(PREVIEW_THEME_CSS); }} catch(e) {{}} }}
     }} catch(e) {{
-      pvFrame.srcdoc = '<body style="font-family:system-ui;padding:24px;color:#900">'
-        + '미리보기 엔진을 불러오지 못했습니다. 네트워크 연결을 확인하세요.</body>';
+      pvFrame.srcdoc = '<div style="font-family:system-ui;padding:24px;color:#900">'
+        + '미리보기 엔진을 불러오지 못했습니다. 네트워크 연결을 확인하세요.</div>';
     }}
     _marpLoading = false;
     return _marp;
@@ -885,13 +885,17 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
     if (!marp) return;
     try {{
       var out = marp.render(mdForPreview(ta.value));
+      // 주의: 이 스크립트 내부에 닫는 body/script 태그 문자열을 쓰지 말 것.
+      // 빌드 후처리(_inject_mermaid_support)가 닫는 body 태그를 치환하고,
+      // HTML 파서는 닫는 script 태그에서 스크립트를 종료하므로 깨진다.
+      // full-document 래퍼 없이 base+style+html만 넣으면 iframe이 자동 래핑한다.
       var base = '<base href="' + location.href + '">';
-      pvFrame.srcdoc = '<!DOCTYPE html><html><head>' + base + '<style>' + out.css
-        + '\\nhtml,body{{margin:0;background:#fff}}svg{{display:block}}</style></head><body>'
-        + out.html + '</body></html>';
+      var st = '<style>' + out.css
+        + '\\nhtml,body{{margin:0;background:#fff}}svg{{display:block}}<\\/style>';
+      pvFrame.srcdoc = base + st + out.html;
     }} catch(e) {{
-      pvFrame.srcdoc = '<body style="font-family:system-ui;padding:24px;color:#900">렌더 오류: '
-        + ((e && e.message) || e) + '</body>';
+      pvFrame.srcdoc = '<div style="font-family:system-ui;padding:24px;color:#900">렌더 오류: '
+        + ((e && e.message) || e) + '</div>';
     }}
   }}
   function schedulePreview() {{
@@ -1148,7 +1152,13 @@ def _inject_mermaid_support(html: str, active_theme: str) -> str:
   document.head.appendChild(s);
 }})();
 </script>"""
-    return html.replace("</body>", script + "\n</body>", 1)
+    # 문서의 마지막(실제) </body> 앞에 주입.
+    # 주의: 스위처 주입이 먼저 일어나며 그 JS 문자열에 </body>가 포함될 수 있으므로
+    # 첫 </body>를 치환하면 스크립트 한복판에 끼어 깨진다. rsplit으로 마지막만 대상.
+    if "</body>" in html:
+        head, tail = html.rsplit("</body>", 1)
+        return head + script + "\n</body>" + tail
+    return html + script
 
 
 def _inject_theme_switcher(html_path: pathlib.Path, active_theme: str, active_layout: str = "default", original_md: str = "", meta: dict | None = None) -> None:
