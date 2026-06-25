@@ -152,6 +152,33 @@ def build_exports(tmp: pathlib.Path, stem: str, out_dir: pathlib.Path) -> dict:
     return exports
 
 
+def _encrypt_html(html_path: pathlib.Path, out_dir: pathlib.Path, stem: str) -> bool:
+    """staticrypt로 빌드된 index.html을 제자리 암호화 (frontmatter seminar_protect: true).
+
+    암호는 환경변수 SLIDE_PASSWORD에서 읽는다 (repo에 저장 안 함 — GitHub Secret 권장).
+    암호 미설정 시 암호화를 건너뛰고 경고한다 (로컬 빌드/미설정 CI 보호).
+    소스 .md 자체의 비공개는 별도 (private repo + remote_slides) — 이 함수는 배포본만 잠근다.
+    """
+    pw = os.environ.get("SLIDE_PASSWORD", "").strip()
+    if not pw:
+        print(
+            f"  ⚠  {stem}: seminar_protect=true 이지만 SLIDE_PASSWORD 환경변수가 없어 "
+            f"암호화를 생략합니다. (평문 배포 주의 — CI엔 Secret 등록 필요)",
+            file=sys.stderr,
+        )
+        return False
+    r = subprocess.run(
+        [_NPX, "--yes", "staticrypt", str(html_path),
+         "-p", pw, "-d", str(out_dir), "-c", "false", "--short"],
+        capture_output=True, text=True,
+    )
+    if r.returncode != 0:
+        print(f"  ⚠  {stem} staticrypt 암호화 실패:\n{r.stderr.strip()[:300]}", file=sys.stderr)
+        return False
+    print(f"  🔒 {stem}  →  암호 보호 적용 (staticrypt)")
+    return True
+
+
 def _build_png_gallery(stem: str, png_files: list, png_dir: pathlib.Path) -> None:
     """PNG 슬라이드 갤러리 HTML 생성."""
     imgs = "\n".join(
@@ -1250,6 +1277,7 @@ def build_slide(md_path: pathlib.Path, config: dict) -> dict | None:
     seminar_title   = fm.pop("seminar_title", None) or first_title(body)
     seminar_visible = fm.pop("seminar_visible", True)
     seminar_layout  = fm.pop("seminar_layout", "default")
+    seminar_protect = bool(fm.pop("seminar_protect", False))
 
     fm.setdefault("marp", True)
     fm["theme"] = seminar_theme
@@ -1281,7 +1309,9 @@ def build_slide(md_path: pathlib.Path, config: dict) -> dict | None:
         print(f"  ✓  {stem}  →  dist/{stem}/index.html")
 
         # ── PDF / PPTX / PNG ─────────────────────────────────────────────────
-        exports = build_exports(tmp, stem, out_dir)
+        # 보호 문서는 export를 생성하지 않는다 (암호화 안 된 PDF/PPTX/PNG로 내용 유출 방지).
+        if not seminar_protect:
+            exports = build_exports(tmp, stem, out_dir)
     finally:
         tmp.unlink(missing_ok=True)
 
@@ -1292,6 +1322,10 @@ def build_slide(md_path: pathlib.Path, config: dict) -> dict | None:
         "base_url":  config.get("base_url", ""),
         "png_count": exports.get("png_count", 0),
     })
+
+    # ── 암호 보호 (staticrypt): HTML 빌드·주입 완료 후 제자리 암호화 ──────────
+    if seminar_protect:
+        _encrypt_html(out_html, out_dir, stem)
 
     # ── assets 복사 (slides/assets/ → dist/<stem>/assets/) ─────────────────
     assets_src = SLIDES_DIR / "assets"
@@ -1311,6 +1345,7 @@ def build_slide(md_path: pathlib.Path, config: dict) -> dict | None:
         "visible": seminar_visible,
         "url":     f"./{stem}/",
         "exports": exports,
+        "protected": seminar_protect,
     }
 
 
@@ -1392,10 +1427,13 @@ def _seminar_card(s: dict) -> str:
 
     qr_data = s['url'].lstrip('./')
 
+    lock_badge = '<span class="badge badge-lock" title="암호 보호됨">🔒 보호됨</span>' if s.get("protected") else ""
+
     return f"""\
         <div class="card">
           <a class="card-body" href="{s['url']}">
             <span class="badge">{label}</span>
+            {lock_badge}
             <h3>{s['title']}</h3>
             <p>{desc}</p>
           </a>
@@ -1477,6 +1515,10 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; }
   display: inline-block; background: var(--accent-bg); color: #a78bfa;
   border: 1px solid rgba(124,58,237,.4); border-radius: 6px;
   font-size: .72rem; padding: 2px 9px; width: fit-content;
+}
+.badge-lock {
+  background: rgba(234,179,8,.12); color: #fcd34d;
+  border-color: rgba(234,179,8,.4); margin-left: 6px;
 }
 .card-body h3 { font-size: 1.05rem; font-weight: 600; line-height: 1.4; }
 .card-body p  { color: var(--muted); font-size: .87rem; line-height: 1.6; flex: 1; }

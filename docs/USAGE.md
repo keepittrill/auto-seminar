@@ -386,6 +386,28 @@ seminar_visible: false
 # 나중에 이 줄을 삭제하면 자동으로 카드에 등록됨
 ```
 
+#### `seminar_protect`
+
+| 값 | 기본값 | 설명 |
+|----|--------|------|
+| `true` / `false` | `false` | `true`이면 배포된 HTML을 **암호로 보호**(staticrypt 암호화) |
+
+```yaml
+seminar_protect: true   # 이 문서는 암호 입력해야 열람 가능
+```
+
+**동작:**
+- 빌드 시 `SLIDE_PASSWORD` 환경변수의 암호로 HTML을 **AES 암호화**합니다.
+  URL 접속 → 암호 입력 화면 → 맞는 암호라야 슬라이드가 보입니다.
+- 암호는 repo에 저장하지 않습니다 — **GitHub Secret `SLIDE_PASSWORD`** 로 주입.
+  (로컬 빌드에서 `SLIDE_PASSWORD` 미설정 시 암호화를 건너뛰고 경고)
+- 보호 문서는 **PDF/PPTX/PNG export를 생성하지 않습니다** (암호 없는 파일로 내용 유출 방지).
+- 랜딩 카드에 🔒 보호됨 배지가 붙습니다.
+
+> ⚠️ **중요:** staticrypt는 *배포된 HTML*만 잠급니다. repo가 **public이면 소스 `.md`를
+> GitHub에서 그대로 읽을 수 있어** 무의미합니다. 진짜 비공개하려면 소스를 **private repo**에
+> 두고 `remote_slides`로 가져오세요. → 자세한 설정은 [§11.12 암호 보호 문서 배포](#1112-암호-보호-문서-배포-private-소스--staticrypt)
+
 ### 3.2 Marp 필드 (그대로 전달됨)
 
 `seminar_*` 필드를 제거한 후 나머지 frontmatter는 그대로 Marp에 전달됩니다.
@@ -2771,3 +2793,60 @@ finally:
     pass  # tmp.unlink(missing_ok=True)  ← 주석 처리
     # 확인 후: ls slides/_build_*.md
 ```
+
+### 11.12 암호 보호 문서 배포 (private 소스 + staticrypt)
+
+특정 문서를 **배포는 하되 암호 아는 사람만** 보게 하는 설정. 두 겹으로 보호한다:
+**소스 `.md`는 private repo**(GitHub에서 안 보이게) + **배포 HTML은 staticrypt 암호화**.
+
+> **왜 둘 다?** GitHub Pages 사이트는 URL만 알면 공개다. 그래서 배포본은 staticrypt로 잠근다.
+> 그리고 메인 repo가 public이면 소스 `.md`가 그대로 노출되므로, 소스는 private repo에 둔다.
+> (Free 플랜은 private repo에서 Pages 게시 불가 → 메인 repo는 public 유지하고
+> 민감 문서만 private repo로 분리해 `remote_slides`로 가져온다.)
+
+**1단계 — private repo에 소스 두기**
+```
+1. GitHub에서 private repo 생성 (예: my-private-slides). Free에서 private repo 무제한.
+2. 보호할 문서(예: CLAUDE_CODE_SEMINAR.md)를 그 repo에 push.
+3. public 메인 repo의 slides/ 에서는 그 .md를 제거 (소스 노출 방지).
+```
+
+**2단계 — PAT 발급 + Secret 등록 (메인 repo)**
+```
+1. GitHub Fine-grained PAT: private repo에 Contents: Read-only 권한.
+2. 메인 repo → Settings → Secrets and variables → Actions:
+   - REMOTE_SLIDES_TOKEN = 위 PAT
+   - SLIDE_PASSWORD      = 열람용 암호 (본인이 정함)
+```
+
+**3단계 — `seminar.config.yml`에 remote_slides + 보호 플래그**
+```yaml
+remote_slides:
+  - url: https://github.com/<me>/my-private-slides/blob/main/CLAUDE_CODE_SEMINAR.md
+    stem: CLAUDE_CODE_SEMINAR
+    seminar_theme: tech-dark
+    seminar_protect: true      # ← 이 문서를 staticrypt로 암호화
+    seminar_visible: false     # (선택) 랜딩 목록에서도 숨김
+```
+> `remote_slides` 항목의 `seminar_protect`/`seminar_visible`는 가져온 파일에 frontmatter로 주입된다.
+> 로컬 `slides/*.md`라면 그 파일 frontmatter에 `seminar_protect: true`만 넣으면 된다.
+
+**4단계 — `.github/workflows/deploy.yml`에 staticrypt 설치 + 암호 주입**
+```yaml
+      - name: Install Marp CLI
+        run: npm install -g @marp-team/marp-cli staticrypt   # staticrypt 추가
+
+      - name: Build slides
+        run: python scripts/build.py
+        env:
+          REMOTE_SLIDES_TOKEN: ${{ secrets.REMOTE_SLIDES_TOKEN }}
+          SLIDE_PASSWORD: ${{ secrets.SLIDE_PASSWORD }}        # ← 추가
+```
+
+**동작 결과**
+- 빌드 시 `seminar_protect: true` 문서는 `_encrypt_html()`이 staticrypt로 HTML을 암호화.
+- 배포 URL 접속 → 암호 입력 화면 → 맞는 암호라야 슬라이드 렌더 (bespoke 네비게이션·테마 스위처 정상).
+- 보호 문서는 PDF/PPTX/PNG export를 만들지 않는다 (암호 없는 파일 유출 방지).
+- `SLIDE_PASSWORD` 미설정(로컬 등) 시 암호화를 건너뛰고 경고 — **CI엔 반드시 Secret 등록**.
+
+> staticrypt ↔ Marp 호환은 검증됨: 암호 입력 후 전체 슬라이드 렌더·네비게이션 정상 동작.
