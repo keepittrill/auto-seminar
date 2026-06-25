@@ -867,7 +867,7 @@ section.as-section-cover h1,section.as-section-cover h2,section.as-section-cover
     _marpLoading = true;
     pvFrame.srcdoc = '<div style="font-family:system-ui;padding:24px;color:#888">미리보기 준비 중…</div>';
     try {{
-      var mod = await import('https://esm.sh/@marp-team/marp-core@4?bundle');
+      var mod = await import('https://esm.sh/@marp-team/marp-core@4');
       var M = mod.Marp || (mod.default && mod.default.Marp) || mod.default;
       _marp = new M({{ html: true }});
       if (PREVIEW_THEME_CSS) {{ try {{ _marp.themeSet.add(PREVIEW_THEME_CSS); }} catch(e) {{}} }}
