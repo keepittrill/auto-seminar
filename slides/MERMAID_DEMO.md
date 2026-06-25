@@ -101,9 +101,9 @@ pie title 기술 스택 비중
 ## 사용 방법 & 제한
 
 <style scoped>
-section { font-size: 24px; }
-pre { font-size: 0.78em; line-height: 1.32; }
-table { font-size: 0.8em; }
+section { font-size: 19px; padding-top: 50px; }
+pre { font-size: 0.78em; line-height: 1.3; }
+table { font-size: 0.82em; }
 </style>
 
 **기본 사용법**

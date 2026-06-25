@@ -9,6 +9,7 @@ GitHub Pages 기반 만능 세미나 도구. `slides/`에 `.md`만 넣으면 Mar
 | 빌드 | `python scripts/build.py` → `dist/` |
 | 테스트 | `python -m pytest tests/test_build.py -q` |
 | 슬라이드 lint | `python scripts/lint_slides.py` (자동수정: `--fix`) |
+| 오버플로우 검사 | `python scripts/build.py && python scripts/lint_slides.py --overflow` (Chrome 필요) |
 
 ## 배포 전 규칙 (반드시)
 
