@@ -100,6 +100,12 @@ pie title 기술 스택 비중
 
 ## 사용 방법 & 제한
 
+<style scoped>
+section { font-size: 24px; }
+pre { font-size: 0.78em; line-height: 1.32; }
+table { font-size: 0.8em; }
+</style>
+
 **기본 사용법**
 
 ````markdown
@@ -108,6 +114,24 @@ flowchart LR
     A --> B --> C
 ```
 ````
+
+**지원 범위**
+
+| 항목 | 지원 여부 |
+|------|----------|
+| HTML 발표 뷰 | ✅ 실시간 렌더링 |
+| 테마 전환 연동 | ✅ 자동 재렌더 |
+| PDF / PPTX 내보내기 | ❌ 미지원 |
+| 오프라인 환경 | ❌ CDN 필요 (`cdn.jsdelivr.net`) |
+
+> PDF가 필요하면 브라우저 **Ctrl+P** 인쇄를 사용하세요.
+
+## 큰 다이어그램 조절
+
+<style scoped>
+section { font-size: 26px; }
+pre { font-size: 0.78em; line-height: 1.34; }
+</style>
 
 **다이어그램이 너무 크면** — `<style scoped>` 로 해당 슬라이드만 조절
 
@@ -127,14 +151,3 @@ flowchart TD
   ...
 ```
 ````
-
-**지원 범위**
-
-| 항목 | 지원 여부 |
-|------|----------|
-| HTML 발표 뷰 | ✅ 실시간 렌더링 |
-| 테마 전환 연동 | ✅ 자동 재렌더 |
-| PDF / PPTX 내보내기 | ❌ 미지원 |
-| 오프라인 환경 | ❌ CDN 필요 (`cdn.jsdelivr.net`) |
-
-> PDF가 필요하면 브라우저 **Ctrl+P** 인쇄를 사용하세요.
